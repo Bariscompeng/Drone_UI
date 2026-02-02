@@ -34,6 +34,12 @@ const PanelSettings = ({ panel, onClose, onSave }) => {
       '/imu/raw',
       '/mavros/imu/data'
     ],
+    horizon: [
+      '/imu/data',
+      '/imu/raw',
+      '/mavros/imu/data',
+      '/flight/attitude'
+    ],
     system: []
   };
 
@@ -43,6 +49,7 @@ const PanelSettings = ({ panel, onClose, onSave }) => {
     { value: 'lidar', label: '📡 LiDAR 3D' },
     { value: 'gps', label: '📍 GPS Map' },
     { value: 'incline', label: '📐 Vehicle Incline' },
+    { value: 'horizon', label: '🎯 Artificial Horizon' },
     { value: 'system', label: '💻 System Status' }
   ];
 
@@ -55,32 +62,150 @@ const PanelSettings = ({ panel, onClose, onSave }) => {
     });
   };
 
+  const styles = {
+    overlay: {
+      position: 'fixed',
+      top: 0,
+      left: 0,
+      right: 0,
+      bottom: 0,
+      background: 'rgba(0, 0, 0, 0.8)',
+      display: 'flex',
+      alignItems: 'center',
+      justifyContent: 'center',
+      zIndex: 2000,
+      backdropFilter: 'blur(4px)'
+    },
+    modal: {
+      background: '#161b26',
+      border: '1px solid rgba(0, 255, 65, 0.3)',
+      borderRadius: '12px',
+      width: '500px',
+      maxWidth: '90vw',
+      boxShadow: '0 20px 60px rgba(0, 0, 0, 0.6)'
+    },
+    header: {
+      display: 'flex',
+      alignItems: 'center',
+      justifyContent: 'space-between',
+      padding: '20px 24px',
+      borderBottom: '1px solid rgba(0, 255, 65, 0.2)'
+    },
+    title: {
+      color: '#00ff41',
+      fontSize: '16px',
+      fontWeight: 700
+    },
+    closeBtn: {
+      width: '32px',
+      height: '32px',
+      display: 'flex',
+      alignItems: 'center',
+      justifyContent: 'center',
+      background: 'transparent',
+      border: 'none',
+      color: '#8b92a0',
+      cursor: 'pointer',
+      borderRadius: '6px'
+    },
+    body: {
+      padding: '24px',
+      display: 'flex',
+      flexDirection: 'column',
+      gap: '20px'
+    },
+    formGroup: {
+      display: 'flex',
+      flexDirection: 'column',
+      gap: '8px'
+    },
+    label: {
+      fontSize: '12px',
+      fontWeight: 600,
+      color: '#8b92a0',
+      textTransform: 'uppercase',
+      letterSpacing: '0.5px'
+    },
+    input: {
+      padding: '12px',
+      background: 'rgba(0, 0, 0, 0.3)',
+      border: '1px solid rgba(255, 255, 255, 0.1)',
+      borderRadius: '6px',
+      color: '#e0e0e0',
+      fontSize: '14px',
+      fontFamily: 'inherit'
+    },
+    select: {
+      padding: '12px',
+      background: 'rgba(0, 0, 0, 0.3)',
+      border: '1px solid rgba(255, 255, 255, 0.1)',
+      borderRadius: '6px',
+      color: '#e0e0e0',
+      fontSize: '14px',
+      fontFamily: 'inherit',
+      cursor: 'pointer'
+    },
+    helpText: {
+      fontSize: '11px',
+      color: '#5a6270',
+      fontStyle: 'italic'
+    },
+    footer: {
+      display: 'flex',
+      justifyContent: 'flex-end',
+      gap: '12px',
+      padding: '20px 24px',
+      borderTop: '1px solid rgba(255, 255, 255, 0.1)'
+    },
+    btnSecondary: {
+      padding: '10px 24px',
+      background: 'rgba(255, 255, 255, 0.05)',
+      color: '#e0e0e0',
+      border: '1px solid rgba(255, 255, 255, 0.1)',
+      borderRadius: '6px',
+      fontWeight: 600,
+      fontSize: '13px',
+      cursor: 'pointer'
+    },
+    btnPrimary: {
+      padding: '10px 24px',
+      background: '#00ff41',
+      color: '#0a0e1a',
+      border: 'none',
+      borderRadius: '6px',
+      fontWeight: 600,
+      fontSize: '13px',
+      cursor: 'pointer'
+    }
+  };
+
   return (
-    <div className="modal-overlay" onClick={onClose}>
-      <div className="modal-content" onClick={(e) => e.stopPropagation()}>
-        <div className="modal-header">
-          <h3>Panel Settings</h3>
-          <button className="modal-close" onClick={onClose}>
+    <div style={styles.overlay} onClick={onClose}>
+      <div style={styles.modal} onClick={(e) => e.stopPropagation()}>
+        <div style={styles.header}>
+          <h3 style={styles.title}>Panel Settings</h3>
+          <button style={styles.closeBtn} onClick={onClose}>
             <X size={20} />
           </button>
         </div>
 
-        <div className="modal-body">
-          <div className="form-group">
-            <label>Panel Title</label>
+        <div style={styles.body}>
+          <div style={styles.formGroup}>
+            <label style={styles.label}>Panel Title</label>
             <input
               type="text"
+              style={styles.input}
               value={panelTitle}
               onChange={(e) => setPanelTitle(e.target.value)}
               placeholder="Enter panel title..."
             />
           </div>
 
-          <div className="form-group">
-            <label>Panel Type</label>
-            <select value={panelType} onChange={(e) => {
+          <div style={styles.formGroup}>
+            <label style={styles.label}>Panel Type</label>
+            <select style={styles.select} value={panelType} onChange={(e) => {
               setPanelType(e.target.value);
-              setSelectedTopic(''); // Reset topic when type changes
+              setSelectedTopic('');
             }}>
               {panelTypes.map(type => (
                 <option key={type.value} value={type.value}>
@@ -91,195 +216,29 @@ const PanelSettings = ({ panel, onClose, onSave }) => {
           </div>
 
           {topicsByType[panelType]?.length > 0 && (
-            <div className="form-group">
-              <label>ROS Topic</label>
-              <select value={selectedTopic} onChange={(e) => setSelectedTopic(e.target.value)}>
+            <div style={styles.formGroup}>
+              <label style={styles.label}>ROS Topic</label>
+              <select style={styles.select} value={selectedTopic} onChange={(e) => setSelectedTopic(e.target.value)}>
                 <option value="">Select Topic...</option>
                 {topicsByType[panelType].map(topic => (
                   <option key={topic} value={topic}>{topic}</option>
                 ))}
               </select>
-              <span className="help-text">
+              <span style={styles.helpText}>
                 Choose the ROS topic for this panel to subscribe to
               </span>
             </div>
           )}
         </div>
 
-        <div className="modal-footer">
-          <button className="btn-secondary" onClick={onClose}>
+        <div style={styles.footer}>
+          <button style={styles.btnSecondary} onClick={onClose}>
             Cancel
           </button>
-          <button className="btn-primary" onClick={handleSave}>
+          <button style={styles.btnPrimary} onClick={handleSave}>
             Save Changes
           </button>
         </div>
-
-        <style jsx>{`
-          .modal-overlay {
-            position: fixed;
-            top: 0;
-            left: 0;
-            right: 0;
-            bottom: 0;
-            background: rgba(0, 0, 0, 0.8);
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            z-index: 2000;
-            backdrop-filter: blur(4px);
-            animation: fadeIn 0.2s ease;
-          }
-
-          @keyframes fadeIn {
-            from { opacity: 0; }
-            to { opacity: 1; }
-          }
-
-          .modal-content {
-            background: #161b26;
-            border: 1px solid rgba(0, 255, 65, 0.3);
-            border-radius: 12px;
-            width: 500px;
-            max-width: 90vw;
-            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.6);
-            animation: slideUp 0.3s ease;
-          }
-
-          @keyframes slideUp {
-            from {
-              transform: translateY(20px);
-              opacity: 0;
-            }
-            to {
-              transform: translateY(0);
-              opacity: 1;
-            }
-          }
-
-          .modal-header {
-            display: flex;
-            align-items: center;
-            justify-content: space-between;
-            padding: 20px 24px;
-            border-bottom: 1px solid rgba(0, 255, 65, 0.2);
-          }
-
-          .modal-header h3 {
-            color: #00ff41;
-            font-size: 16px;
-            font-weight: 700;
-          }
-
-          .modal-close {
-            width: 32px;
-            height: 32px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            background: transparent;
-            border: none;
-            color: #8b92a0;
-            cursor: pointer;
-            transition: all 0.2s;
-            border-radius: 6px;
-          }
-
-          .modal-close:hover {
-            color: #ff4444;
-            background: rgba(255, 68, 68, 0.1);
-          }
-
-          .modal-body {
-            padding: 24px;
-            display: flex;
-            flex-direction: column;
-            gap: 20px;
-          }
-
-          .form-group {
-            display: flex;
-            flex-direction: column;
-            gap: 8px;
-          }
-
-          .form-group label {
-            font-size: 12px;
-            font-weight: 600;
-            color: #8b92a0;
-            text-transform: uppercase;
-            letter-spacing: 0.5px;
-          }
-
-          .form-group input,
-          .form-group select {
-            padding: 12px;
-            background: rgba(0, 0, 0, 0.3);
-            border: 1px solid rgba(255, 255, 255, 0.1);
-            border-radius: 6px;
-            color: #e0e0e0;
-            font-size: 14px;
-            font-family: 'JetBrains Mono', monospace;
-            transition: all 0.2s;
-          }
-
-          .form-group input:focus,
-          .form-group select:focus {
-            outline: none;
-            border-color: #00ff41;
-            box-shadow: 0 0 0 3px rgba(0, 255, 65, 0.1);
-          }
-
-          .form-group select {
-            cursor: pointer;
-          }
-
-          .help-text {
-            font-size: 11px;
-            color: #5a6270;
-            font-style: italic;
-          }
-
-          .modal-footer {
-            display: flex;
-            justify-content: flex-end;
-            gap: 12px;
-            padding: 20px 24px;
-            border-top: 1px solid rgba(255, 255, 255, 0.1);
-          }
-
-          .btn-primary,
-          .btn-secondary {
-            padding: 10px 24px;
-            border: none;
-            border-radius: 6px;
-            font-weight: 600;
-            font-size: 13px;
-            cursor: pointer;
-            transition: all 0.2s;
-          }
-
-          .btn-primary {
-            background: #00ff41;
-            color: #0a0e1a;
-          }
-
-          .btn-primary:hover {
-            background: #00dd37;
-            transform: translateY(-1px);
-            box-shadow: 0 4px 12px rgba(0, 255, 65, 0.3);
-          }
-
-          .btn-secondary {
-            background: rgba(255, 255, 255, 0.05);
-            color: #e0e0e0;
-            border: 1px solid rgba(255, 255, 255, 0.1);
-          }
-
-          .btn-secondary:hover {
-            background: rgba(255, 255, 255, 0.1);
-          }
-        `}</style>
       </div>
     </div>
   );

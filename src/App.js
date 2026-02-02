@@ -14,26 +14,19 @@ function App() {
   const [currentPage, setCurrentPage] = useState('dashboard');
   const [settingsPanel, setSettingsPanel] = useState(null);
   const [showAddModal, setShowAddModal] = useState(false);
+  const [mosaicLayout, setMosaicLayout] = useState(null);
   const { ros, connected } = useROS();
 
-  const [panels, setPanels] = useState([
+  const DEFAULT_PANELS = [
     { id: 1, type: 'camera', title: 'RGB CAMERA', topic: '/camera/rgb/image_raw' },
     { id: 2, type: 'thermal', title: 'THERMAL CAMERA', topic: '/camera/thermal/image_raw' },
     { id: 3, type: 'lidar', title: 'LIDAR 3D', topic: '/velodyne_points' },
     { id: 4, type: 'incline', title: 'VEHICLE INCLINE', topic: '/imu/data' },
     { id: 5, type: 'gps', title: 'GPS MAP', topic: '/gps/fix' },
     { id: 6, type: 'system', title: 'SYSTEM STATUS', topic: '' }
-  ]);
+  ];
 
-  // Daha iyi başlangıç layout - Foxglove tarzı
-  const [layouts, setLayouts] = useState([
-    { i: '1', x: 0, y: 0, w: 6, h: 6, minW: 3, minH: 4 },   // RGB Camera - Sol üst, büyük
-    { i: '2', x: 6, y: 0, w: 6, h: 6, minW: 3, minH: 4 },   // Thermal - Sağ üst, büyük
-    { i: '3', x: 0, y: 6, w: 8, h: 7, minW: 4, minH: 5 },   // LiDAR - Sol alt, geniş
-    { i: '4', x: 8, y: 6, w: 4, h: 7, minW: 3, minH: 4 },   // Incline - Sağ alt üst
-    { i: '5', x: 0, y: 13, w: 8, h: 6, minW: 4, minH: 4 },  // GPS - Alt, geniş
-    { i: '6', x: 8, y: 13, w: 4, h: 6, minW: 3, minH: 4 }   // System - Alt sağ
-  ]);
+  const [panels, setPanels] = useState(DEFAULT_PANELS);
 
   const [systemStatus, setSystemStatus] = useState({
     connected: false,
@@ -56,33 +49,50 @@ function App() {
     return () => clearInterval(interval);
   }, []);
 
+  // İlk yükleme - localStorage kontrol et
   useEffect(() => {
-    const savedLayout = localStorage.getItem('droneUI_layout');
-    const savedPanels = localStorage.getItem('droneUI_panels');
-    
-    if (savedLayout) {
-      try {
-        setLayouts(JSON.parse(savedLayout));
-      } catch (e) {
-        console.error('Failed to load saved layout:', e);
+    try {
+      const savedPanels = localStorage.getItem('droneUI_panels');
+      const savedLayout = localStorage.getItem('droneUI_mosaicLayout');
+      
+      if (savedPanels) {
+        const parsed = JSON.parse(savedPanels);
+        // Validate panels
+        if (Array.isArray(parsed) && parsed.length > 0) {
+          setPanels(parsed);
+        } else {
+          // Reset to default if invalid
+          localStorage.removeItem('droneUI_panels');
+          localStorage.removeItem('droneUI_mosaicLayout');
+        }
       }
-    }
-    
-    if (savedPanels) {
-      try {
-        setPanels(JSON.parse(savedPanels));
-      } catch (e) {
-        console.error('Failed to load saved panels:', e);
+      
+      if (savedLayout) {
+        setMosaicLayout(JSON.parse(savedLayout));
       }
+    } catch (e) {
+      console.error('Failed to load saved data, resetting...', e);
+      localStorage.removeItem('droneUI_panels');
+      localStorage.removeItem('droneUI_mosaicLayout');
+      setPanels(DEFAULT_PANELS);
     }
   }, []);
 
   const handleLayoutChange = (newLayout) => {
-    setLayouts(newLayout);
-    localStorage.setItem('droneUI_layout', JSON.stringify(newLayout));
+    setMosaicLayout(newLayout);
+    try {
+      localStorage.setItem('droneUI_mosaicLayout', JSON.stringify(newLayout));
+    } catch (e) {
+      console.error('Failed to save layout:', e);
+    }
   };
 
   const handleAddPanel = (panelData) => {
+    if (panels.length >= 6) {
+      alert('Maximum 6 panels allowed!');
+      return;
+    }
+
     const newPanel = {
       id: Date.now(),
       type: panelData.type,
@@ -90,39 +100,27 @@ function App() {
       topic: panelData.topic
     };
 
-    const maxY = layouts.length > 0 ? Math.max(...layouts.map(l => l.y + l.h)) : 0;
-    
-    const newLayout = {
-      i: newPanel.id.toString(),
-      x: 0,
-      y: maxY,
-      w: 6,
-      h: 6,
-      minW: 3,
-      minH: 4
-    };
-
     const newPanels = [...panels, newPanel];
-    const newLayouts = [...layouts, newLayout];
-
     setPanels(newPanels);
-    setLayouts(newLayouts);
     
-    localStorage.setItem('droneUI_panels', JSON.stringify(newPanels));
-    localStorage.setItem('droneUI_layout', JSON.stringify(newLayouts));
+    try {
+      localStorage.setItem('droneUI_panels', JSON.stringify(newPanels));
+    } catch (e) {
+      console.error('Failed to save panels:', e);
+    }
     
     setShowAddModal(false);
   };
 
   const handlePanelClose = (panelId) => {
     const newPanels = panels.filter(p => p.id !== panelId);
-    const newLayouts = layouts.filter(l => l.i !== panelId.toString());
-    
     setPanels(newPanels);
-    setLayouts(newLayouts);
     
-    localStorage.setItem('droneUI_panels', JSON.stringify(newPanels));
-    localStorage.setItem('droneUI_layout', JSON.stringify(newLayouts));
+    try {
+      localStorage.setItem('droneUI_panels', JSON.stringify(newPanels));
+    } catch (e) {
+      console.error('Failed to save panels:', e);
+    }
   };
 
   const handlePanelSettings = (panel) => {
@@ -134,7 +132,13 @@ function App() {
       p.id === updatedPanel.id ? updatedPanel : p
     );
     setPanels(newPanels);
-    localStorage.setItem('droneUI_panels', JSON.stringify(newPanels));
+    
+    try {
+      localStorage.setItem('droneUI_panels', JSON.stringify(newPanels));
+    } catch (e) {
+      console.error('Failed to save panels:', e);
+    }
+    
     setSettingsPanel(null);
   };
 
@@ -162,10 +166,9 @@ function App() {
         {currentPage === 'dashboard' && (
           <Dashboard
             panels={panels}
-            layouts={layouts}
-            onLayoutChange={handleLayoutChange}
             onPanelClose={handlePanelClose}
             onPanelSettings={handlePanelSettings}
+            onLayoutChange={handleLayoutChange}
             ros={ros}
           />
         )}

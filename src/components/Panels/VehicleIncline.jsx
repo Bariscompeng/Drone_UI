@@ -3,13 +3,12 @@ import { useROSTopic } from '../../hooks/useROS';
 
 const VehicleIncline = ({ ros, topic = '/imu/data' }) => {
   const { data } = useROSTopic(ros, topic, 'sensor_msgs/Imu');
-  const [angles, setAngles] = useState({ pitch: 0, roll: 0 });
+  const [angles, setAngles] = useState({ pitch: 2.1, roll: 1.6 });
 
   useEffect(() => {
     if (data && data.orientation) {
       const { x, y, z, w } = data.orientation;
       
-      // Quaternion to Euler angles conversion
       const sinr_cosp = 2 * (w * x + y * z);
       const cosr_cosp = 1 - 2 * (x * x + y * y);
       const roll = Math.atan2(sinr_cosp, cosr_cosp) * (180 / Math.PI);
@@ -23,140 +22,124 @@ const VehicleIncline = ({ ros, topic = '/imu/data' }) => {
     }
   }, [data]);
 
+  const styles = {
+    container: {
+      width: '100%',
+      height: '100%',
+      display: 'flex',
+      flexDirection: 'column',
+      background: 'linear-gradient(145deg, rgba(0, 0, 0, 0.4) 0%, rgba(0, 0, 0, 0.2) 100%)',
+      overflow: 'hidden'
+    },
+    row: {
+      flex: 1,
+      display: 'flex',
+      flexDirection: 'column',
+      alignItems: 'center',
+      justifyContent: 'center',
+      padding: '20px',
+      gap: '16px',
+      position: 'relative'
+    },
+    divider: {
+      height: '2px',
+      background: 'linear-gradient(to right, transparent, rgba(0, 255, 65, 0.3), transparent)',
+      margin: '0 20px'
+    },
+    label: {
+      fontSize: '11px',
+      color: '#00ff41',
+      fontWeight: 700,
+      letterSpacing: '2px',
+      textTransform: 'uppercase',
+      textShadow: '0 0 10px rgba(0, 255, 65, 0.5)'
+    },
+    value: {
+      fontSize: '42px',
+      fontWeight: 700,
+      color: '#00ff41',
+      textShadow: '0 0 30px rgba(0, 255, 65, 0.8)',
+      minWidth: '180px',
+      textAlign: 'center',
+      fontFamily: 'JetBrains Mono, monospace',
+      letterSpacing: '2px'
+    },
+    vehicleContainer: {
+      width: '140px',
+      height: '140px',
+      perspective: '800px',
+      display: 'flex',
+      alignItems: 'center',
+      justifyContent: 'center',
+      position: 'relative'
+    },
+    vehicleBody: (rotation) => ({
+      width: '100px',
+      height: '50px',
+      background: 'linear-gradient(145deg, #00ff41, #00cc35)',
+      borderRadius: '10px',
+      boxShadow: `
+        0 15px 40px rgba(0, 255, 65, 0.4),
+        inset 0 2px 10px rgba(255, 255, 255, 0.2)
+      `,
+      transition: 'transform 0.3s ease',
+      transform: rotation,
+      border: '3px solid #00ff41',
+      position: 'relative'
+    }),
+    vehicleDetail: {
+      position: 'absolute',
+      width: '20px',
+      height: '20px',
+      background: 'rgba(0, 0, 0, 0.3)',
+      borderRadius: '50%',
+      border: '2px solid #00ff41'
+    },
+    grid: {
+      position: 'absolute',
+      top: 0,
+      left: 0,
+      width: '100%',
+      height: '100%',
+      backgroundImage: `
+        repeating-linear-gradient(0deg, transparent, transparent 20px, rgba(0, 255, 65, 0.05) 20px, rgba(0, 255, 65, 0.05) 21px),
+        repeating-linear-gradient(90deg, transparent, transparent 20px, rgba(0, 255, 65, 0.05) 20px, rgba(0, 255, 65, 0.05) 21px)
+      `,
+      pointerEvents: 'none'
+    }
+  };
+
   return (
-    <div className="vehicle-incline">
-      <div className="incline-item">
-        <span className="incline-label">PITCH ANGLE</span>
-        <span className="incline-value">{angles.pitch >= 0 ? '+' : ''}{angles.pitch.toFixed(1)}°</span>
-        <div className="vehicle-view front">
-          <div className="vehicle-body" style={{ transform: `rotateX(${angles.pitch}deg)` }}>
-            <div className="vehicle-top"></div>
-            <div className="vehicle-front"></div>
-          </div>
-        </div>
-      </div>
+    <div style={styles.container}>
+      <div style={styles.grid} />
       
-      <div className="incline-divider"></div>
-      
-      <div className="incline-item">
-        <span className="incline-label">ROLL ANGLE</span>
-        <span className="incline-value">{angles.roll >= 0 ? '+' : ''}{angles.roll.toFixed(1)}°</span>
-        <div className="vehicle-view side">
-          <div className="vehicle-body" style={{ transform: `rotateY(${angles.roll}deg)` }}>
-            <div className="vehicle-top"></div>
-            <div className="vehicle-side"></div>
+      <div style={styles.row}>
+        <span style={styles.label}>PITCH ANGLE</span>
+        <span style={styles.value}>
+          {angles.pitch >= 0 ? '+' : ''}{angles.pitch.toFixed(1)}°
+        </span>
+        <div style={styles.vehicleContainer}>
+          <div style={styles.vehicleBody(`rotateX(${angles.pitch}deg)`)}>
+            <div style={{ ...styles.vehicleDetail, top: '50%', left: '10px', transform: 'translateY(-50%)' }} />
+            <div style={{ ...styles.vehicleDetail, top: '50%', right: '10px', transform: 'translateY(-50%)' }} />
           </div>
         </div>
       </div>
 
-      <style jsx>{`
-        .vehicle-incline {
-          width: 100%;
-          height: 100%;
-          display: flex;
-          gap: 20px;
-          padding: 20px;
-          align-items: center;
-          justify-content: center;
-          background: radial-gradient(circle at center, rgba(0, 255, 65, 0.03) 0%, transparent 70%);
-        }
+      <div style={styles.divider} />
 
-        .incline-item {
-          flex: 1;
-          display: flex;
-          flex-direction: column;
-          align-items: center;
-          gap: 12px;
-        }
-
-        .incline-divider {
-          width: 2px;
-          height: 80%;
-          background: linear-gradient(to bottom, transparent, rgba(0, 255, 65, 0.2), transparent);
-        }
-
-        .incline-label {
-          font-size: 10px;
-          color: #00ff41;
-          font-weight: 700;
-          letter-spacing: 1.5px;
-        }
-
-        .incline-value {
-          font-size: 32px;
-          font-weight: 700;
-          color: #00ff41;
-          text-shadow: 0 0 20px rgba(0, 255, 65, 0.5);
-          min-width: 120px;
-          text-align: center;
-        }
-
-        .vehicle-view {
-          width: 120px;
-          height: 120px;
-          perspective: 600px;
-          display: flex;
-          align-items: center;
-          justify-content: center;
-        }
-
-        .vehicle-body {
-          width: 80px;
-          height: 40px;
-          position: relative;
-          transform-style: preserve-3d;
-          transition: transform 0.3s ease;
-        }
-
-        .vehicle-top,
-        .vehicle-front,
-        .vehicle-side {
-          position: absolute;
-          background: linear-gradient(145deg, #00ff41, #00aa2b);
-          box-shadow: 0 0 20px rgba(0, 255, 65, 0.4);
-        }
-
-        .vehicle-top {
-          width: 80px;
-          height: 40px;
-          transform: translateZ(20px);
-          border-radius: 8px;
-          border: 2px solid #00ff41;
-        }
-
-        .vehicle-front {
-          width: 80px;
-          height: 40px;
-          transform: rotateX(90deg) translateZ(20px);
-          background: linear-gradient(145deg, #00cc35, #008822);
-          border-radius: 0 0 8px 8px;
-        }
-
-        .vehicle-side {
-          width: 40px;
-          height: 40px;
-          transform: rotateY(90deg) translateZ(40px);
-          background: linear-gradient(145deg, #00cc35, #008822);
-          border-radius: 0 8px 8px 0;
-        }
-
-        @media (max-width: 768px) {
-          .vehicle-incline {
-            flex-direction: column;
-            padding: 10px;
-          }
-
-          .incline-divider {
-            width: 80%;
-            height: 2px;
-            background: linear-gradient(to right, transparent, rgba(0, 255, 65, 0.2), transparent);
-          }
-
-          .incline-value {
-            font-size: 24px;
-          }
-        }
-      `}</style>
+      <div style={styles.row}>
+        <span style={styles.label}>ROLL ANGLE</span>
+        <span style={styles.value}>
+          {angles.roll >= 0 ? '+' : ''}{angles.roll.toFixed(1)}°
+        </span>
+        <div style={styles.vehicleContainer}>
+          <div style={styles.vehicleBody(`rotateY(${angles.roll}deg)`)}>
+            <div style={{ ...styles.vehicleDetail, top: '10px', left: '50%', transform: 'translateX(-50%)' }} />
+            <div style={{ ...styles.vehicleDetail, bottom: '10px', left: '50%', transform: 'translateX(-50%)' }} />
+          </div>
+        </div>
+      </div>
     </div>
   );
 };

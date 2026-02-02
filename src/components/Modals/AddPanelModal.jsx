@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { X, Camera, Flame, Radio, MapPin, Compass, Activity } from 'lucide-react';
+import { X, Camera, Flame, Radio, MapPin, Compass, Activity, Gauge } from 'lucide-react';
 
 const AddPanelModal = ({ onClose, onAdd }) => {
   const [selectedType, setSelectedType] = useState(null);
@@ -39,6 +39,13 @@ const AddPanelModal = ({ onClose, onAdd }) => {
       label: 'Vehicle Incline', 
       icon: Compass,
       description: 'Pitch and Roll angles',
+      defaultTopic: '/imu/data'
+    },
+    { 
+      value: 'horizon', 
+      label: 'Artificial Horizon', 
+      icon: Gauge,
+      description: 'Flight attitude indicator',
       defaultTopic: '/imu/data'
     },
     { 
@@ -85,7 +92,7 @@ const AddPanelModal = ({ onClose, onAdd }) => {
       background: '#161b26',
       border: '1px solid rgba(0, 255, 65, 0.3)',
       borderRadius: '12px',
-      width: '600px',
+      width: '700px',
       maxWidth: '90vw',
       maxHeight: '80vh',
       overflow: 'auto',

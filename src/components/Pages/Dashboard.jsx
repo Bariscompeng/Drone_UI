@@ -1,14 +1,14 @@
 import React from 'react';
-import ResponsiveGrid from '../GridLayout/ResponsiveGrid';
-import Panel from '../Panels/Panel';
+import MosaicLayout from '../GridLayout/MosaicLayout';
 import RGBCamera from '../Panels/RGBCamera';
 import ThermalCamera from '../Panels/ThermalCamera';
 import LiDAR3D from '../Panels/LiDAR3D';
 import GPSMap from '../Panels/GPSMap';
 import VehicleIncline from '../Panels/VehicleIncline';
 import SystemStatus from '../Panels/SystemStatus';
+import ArtificialHorizon from '../Panels/ArtificialHorizon';
 
-const Dashboard = ({ panels, layouts, onLayoutChange, onPanelClose, onPanelSettings, ros }) => {
+const Dashboard = ({ panels, onPanelClose, onPanelSettings, onLayoutChange, ros }) => {
   const renderPanelContent = (panel) => {
     switch (panel.type) {
       case 'camera':
@@ -23,38 +23,30 @@ const Dashboard = ({ panels, layouts, onLayoutChange, onPanelClose, onPanelSetti
         return <VehicleIncline ros={ros} topic={panel.topic} />;
       case 'system':
         return <SystemStatus />;
+      case 'horizon':
+        return <ArtificialHorizon ros={ros} topic={panel.topic} />;
       default:
         return <div>Unknown panel type</div>;
     }
   };
 
-  const styles = {
-    dashboard: {
-      width: '100%',
-      height: '100%',
-      overflow: 'auto',
-      position: 'relative'
-    }
+  const renderPanel = (panel) => {
+    return (
+      <div style={{ width: '100%', height: '100%', overflow: 'hidden' }}>
+        {renderPanelContent(panel)}
+      </div>
+    );
   };
 
   return (
-    <div style={styles.dashboard}>
-      <ResponsiveGrid
-        layouts={layouts}
+    <div style={{ width: '100%', height: '100%' }}>
+      <MosaicLayout
+        panels={panels}
+        renderPanel={renderPanel}
+        onPanelClose={onPanelClose}
+        onPanelSettings={onPanelSettings}
         onLayoutChange={onLayoutChange}
-      >
-        {panels.map(panel => (
-          <div key={panel.id.toString()}>
-            <Panel
-              title={panel.title}
-              onClose={() => onPanelClose(panel.id)}
-              onSettings={() => onPanelSettings(panel)}
-            >
-              {renderPanelContent(panel)}
-            </Panel>
-          </div>
-        ))}
-      </ResponsiveGrid>
+      />
     </div>
   );
 };

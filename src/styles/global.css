@@ -1,5 +1,4 @@
-@import '~react-grid-layout/css/styles.css';
-@import '~react-resizable/css/styles.css';
+@import '~react-mosaic-component/react-mosaic-component.css';
 
 * {
   margin: 0;
@@ -12,15 +11,12 @@ body {
   background: #0a0e1a;
   color: #e0e0e0;
   overflow: hidden;
-  -webkit-font-smoothing: antialiased;
-  -moz-osx-font-smoothing: grayscale;
 }
 
 .app {
   width: 100vw;
   height: 100vh;
   background: #0a0e1a;
-  color: #e0e0e0;
   overflow: hidden;
   display: flex;
   flex-direction: column;
@@ -31,208 +27,130 @@ body {
   margin-top: 60px;
   width: calc(100vw - 220px);
   height: calc(100vh - 60px);
-  overflow: auto;
-  background: #0a0e1a;
+  overflow: hidden;
 }
 
-/* React Grid Layout */
-.react-grid-layout {
-  position: relative;
-  transition: height 200ms ease;
-  min-height: 100%;
+/* Mosaic Theme */
+.mosaic-custom-theme {
+  height: 100%;
 }
 
-.react-grid-item {
-  transition: all 200ms ease;
-  transition-property: left, top, width, height;
-  border: 2px solid transparent;
+.mosaic-custom-theme .mosaic-window {
+  background: linear-gradient(145deg, #161b26 0%, #0f1419 100%);
+  border: 1px solid rgba(0, 255, 65, 0.2);
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.4);
 }
 
-.react-grid-item:hover {
-  border-color: rgba(0, 255, 65, 0.3);
-  box-shadow: 0 0 20px rgba(0, 255, 65, 0.1);
+.mosaic-custom-theme .mosaic-window:hover {
+  border-color: rgba(0, 255, 65, 0.4);
 }
 
-/* Resize Handles - Tüm yönler */
-.react-grid-item > .react-resizable-handle {
-  position: absolute;
-  width: 20px;
-  height: 20px;
-  z-index: 10;
+.mosaic-custom-theme .mosaic-window-toolbar {
+  background: rgba(0, 0, 0, 0.3);
+  border-bottom: 1px solid rgba(0, 255, 65, 0.2);
+  height: 40px;
+  padding: 0 16px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  cursor: grab;
 }
 
-/* Sağ alt (se) */
-.react-grid-item > .react-resizable-handle-se {
-  bottom: 0;
-  right: 0;
-  cursor: se-resize;
+.mosaic-custom-theme .mosaic-window-toolbar:active {
+  cursor: grabbing;
 }
 
-.react-grid-item > .react-resizable-handle-se::after {
-  content: "";
-  position: absolute;
-  right: 3px;
-  bottom: 3px;
-  width: 10px;
-  height: 10px;
-  border-right: 3px solid rgba(0, 255, 65, 0.8);
-  border-bottom: 3px solid rgba(0, 255, 65, 0.8);
+.mosaic-custom-theme .mosaic-window-title {
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 1.5px;
+  color: #00ff41;
+  text-transform: uppercase;
+  flex: 1;
 }
 
-/* Sol alt (sw) */
-.react-grid-item > .react-resizable-handle-sw {
-  bottom: 0;
-  left: 0;
-  cursor: sw-resize;
+.mosaic-custom-theme .mosaic-window-controls {
+  display: flex;
+  gap: 8px;
+  align-items: center;
 }
 
-.react-grid-item > .react-resizable-handle-sw::after {
-  content: "";
-  position: absolute;
-  left: 3px;
-  bottom: 3px;
-  width: 10px;
-  height: 10px;
-  border-left: 3px solid rgba(0, 255, 65, 0.8);
-  border-bottom: 3px solid rgba(0, 255, 65, 0.8);
+.mosaic-custom-theme .mosaic-window-body {
+  background: transparent;
+  overflow: hidden;
+  height: calc(100% - 40px);
 }
 
-/* Sağ üst (ne) */
-.react-grid-item > .react-resizable-handle-ne {
-  top: 0;
-  right: 0;
-  cursor: ne-resize;
-}
-
-.react-grid-item > .react-resizable-handle-ne::after {
-  content: "";
-  position: absolute;
-  right: 3px;
-  top: 3px;
-  width: 10px;
-  height: 10px;
-  border-right: 3px solid rgba(0, 255, 65, 0.8);
-  border-top: 3px solid rgba(0, 255, 65, 0.8);
-}
-
-/* Sol üst (nw) */
-.react-grid-item > .react-resizable-handle-nw {
-  top: 0;
-  left: 0;
-  cursor: nw-resize;
-}
-
-.react-grid-item > .react-resizable-handle-nw::after {
-  content: "";
-  position: absolute;
-  left: 3px;
-  top: 3px;
-  width: 10px;
-  height: 10px;
-  border-left: 3px solid rgba(0, 255, 65, 0.8);
-  border-top: 3px solid rgba(0, 255, 65, 0.8);
-}
-
-/* Kenar handles */
-.react-grid-item > .react-resizable-handle-n {
-  top: 0;
-  left: 50%;
-  transform: translateX(-50%);
-  width: 50px;
-  height: 10px;
-  cursor: n-resize;
-  background: rgba(0, 255, 65, 0.2);
-  opacity: 0;
-  transition: opacity 0.2s;
-}
-
-.react-grid-item:hover > .react-resizable-handle-n {
-  opacity: 1;
-}
-
-.react-grid-item > .react-resizable-handle-s {
-  bottom: 0;
-  left: 50%;
-  transform: translateX(-50%);
-  width: 50px;
-  height: 10px;
-  cursor: s-resize;
-  background: rgba(0, 255, 65, 0.2);
-  opacity: 0;
-  transition: opacity 0.2s;
-}
-
-.react-grid-item:hover > .react-resizable-handle-s {
-  opacity: 1;
-}
-
-.react-grid-item > .react-resizable-handle-e {
-  right: 0;
-  top: 50%;
-  transform: translateY(-50%);
-  width: 10px;
-  height: 50px;
-  cursor: e-resize;
-  background: rgba(0, 255, 65, 0.2);
-  opacity: 0;
-  transition: opacity 0.2s;
-}
-
-.react-grid-item:hover > .react-resizable-handle-e {
-  opacity: 1;
-}
-
-.react-grid-item > .react-resizable-handle-w {
-  left: 0;
-  top: 50%;
-  transform: translateY(-50%);
-  width: 10px;
-  height: 50px;
-  cursor: w-resize;
-  background: rgba(0, 255, 65, 0.2);
-  opacity: 0;
-  transition: opacity 0.2s;
-}
-
-.react-grid-item:hover > .react-resizable-handle-w {
-  opacity: 1;
-}
-
-/* Resize sırasında */
-.react-grid-item.resizing {
-  transition: none;
+/* SPLIT BARS - ÇOK GÖRÜNÜR! */
+.mosaic-custom-theme .mosaic-split {
+  background: rgba(0, 255, 65, 0.4) !important;
   z-index: 100;
-  opacity: 0.9;
-  border-color: rgba(0, 255, 65, 0.6);
+  transition: all 0.2s;
 }
 
-.react-grid-item.resizing > .react-resizable-handle {
-  opacity: 1 !important;
+.mosaic-custom-theme .mosaic-split:hover {
+  background: rgba(0, 255, 65, 0.8) !important;
+  box-shadow: 0 0 15px rgba(0, 255, 65, 0.6);
 }
 
-/* Drag sırasında */
-.react-grid-item.react-draggable-dragging {
-  transition: none;
-  z-index: 100;
-  cursor: grabbing !important;
-  opacity: 0.8;
-  border-color: rgba(0, 255, 65, 0.6);
+/* Yatay split (dikey çizgi) */
+.mosaic-custom-theme .mosaic-split.-row {
+  width: 8px !important;
+  cursor: ew-resize !important;
+  margin: 0 !important;
 }
 
-/* Placeholder */
-.react-grid-item.react-grid-placeholder {
+/* Dikey split (yatay çizgi) */
+.mosaic-custom-theme .mosaic-split.-column {
+  height: 8px !important;
+  cursor: ns-resize !important;
+  margin: 0 !important;
+}
+
+/* Split handle göstergeleri */
+.mosaic-custom-theme .mosaic-split.-row::before {
+  content: '⋮';
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  transform: translate(-50%, -50%);
+  font-size: 16px;
+  color: #00ff41;
+  font-weight: bold;
+  line-height: 1;
+  text-shadow: 0 0 5px rgba(0, 255, 65, 0.8);
+}
+
+.mosaic-custom-theme .mosaic-split.-column::before {
+  content: '⋯';
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  transform: translate(-50%, -50%);
+  font-size: 16px;
+  color: #00ff41;
+  font-weight: bold;
+  line-height: 1;
+  text-shadow: 0 0 5px rgba(0, 255, 65, 0.8);
+}
+
+/* Preview */
+.mosaic-custom-theme .mosaic-preview {
   background: rgba(0, 255, 65, 0.15);
   border: 2px dashed #00ff41;
   opacity: 0.8;
-  transition-duration: 100ms;
-  z-index: 2;
-  border-radius: 12px;
+}
+
+/* Drop Target */
+.mosaic-custom-theme .mosaic-drop-target {
+  background: rgba(0, 255, 65, 0.2);
+  border: 2px solid #00ff41;
 }
 
 /* Scrollbar */
 ::-webkit-scrollbar {
-  width: 8px;
-  height: 8px;
+  width: 6px;
+  height: 6px;
 }
 
 ::-webkit-scrollbar-track {
@@ -241,11 +159,7 @@ body {
 
 ::-webkit-scrollbar-thumb {
   background: rgba(0, 255, 65, 0.3);
-  border-radius: 4px;
-}
-
-::-webkit-scrollbar-thumb:hover {
-  background: rgba(0, 255, 65, 0.5);
+  border-radius: 3px;
 }
 
 @media (max-width: 768px) {

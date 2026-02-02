@@ -1,9 +1,11 @@
 import React, { useEffect, useRef } from 'react';
 import * as THREE from 'three';
 
-const LiDAR3D = ({ topic = '/lidar/points' }) => {
+const LiDAR3D = ({ topic = '/velodyne_points' }) => {
   const mountRef = useRef(null);
   const sceneRef = useRef(null);
+  const rendererRef = useRef(null);
+  const cameraRef = useRef(null);
   const animationRef = useRef(null);
 
   useEffect(() => {
@@ -20,11 +22,13 @@ const LiDAR3D = ({ topic = '/lidar/points' }) => {
     const camera = new THREE.PerspectiveCamera(75, width / height, 0.1, 1000);
     camera.position.set(5, 5, 5);
     camera.lookAt(0, 0, 0);
+    cameraRef.current = camera;
 
     const renderer = new THREE.WebGLRenderer({ antialias: true });
     renderer.setSize(width, height);
     renderer.setPixelRatio(window.devicePixelRatio);
     mountRef.current.appendChild(renderer.domElement);
+    rendererRef.current = renderer;
 
     // Grid
     const gridHelper = new THREE.GridHelper(20, 20, 0x00ff41, 0x1a3a2a);
@@ -71,34 +75,44 @@ const LiDAR3D = ({ topic = '/lidar/points' }) => {
       camera.position.z = Math.sin(angle) * 8;
       camera.lookAt(0, 0, 0);
       
-      // Rotate point cloud slightly
       points.rotation.y += 0.001;
       
       renderer.render(scene, camera);
     };
     animate();
 
-    // Handle resize
+    // KRITIK: Resize handler - panel büyüdükçe canvas de büyüsün
     const handleResize = () => {
-      if (!mountRef.current) return;
-      const width = mountRef.current.clientWidth;
-      const height = mountRef.current.clientHeight;
-      camera.aspect = width / height;
+      if (!mountRef.current || !renderer || !camera) return;
+      
+      const newWidth = mountRef.current.clientWidth;
+      const newHeight = mountRef.current.clientHeight;
+      
+      camera.aspect = newWidth / newHeight;
       camera.updateProjectionMatrix();
-      renderer.setSize(width, height);
+      renderer.setSize(newWidth, newHeight);
     };
 
+    // ResizeObserver - panel boyutu değiştiğinde tetiklenir
+    const resizeObserver = new ResizeObserver(handleResize);
+    resizeObserver.observe(mountRef.current);
+
+    // Window resize
     window.addEventListener('resize', handleResize);
 
     // Cleanup
     return () => {
+      resizeObserver.disconnect();
       window.removeEventListener('resize', handleResize);
+      
       if (animationRef.current) {
         cancelAnimationFrame(animationRef.current);
       }
+      
       if (mountRef.current && renderer.domElement) {
         mountRef.current.removeChild(renderer.domElement);
       }
+      
       geometry.dispose();
       material.dispose();
       renderer.dispose();
@@ -106,47 +120,42 @@ const LiDAR3D = ({ topic = '/lidar/points' }) => {
   }, []);
 
   return (
-    <div className="lidar-view">
-      <div ref={mountRef} className="lidar-canvas"></div>
-      <div className="lidar-info">
-        <span className="topic-badge">Topic: {topic}</span>
-        <span className="points-badge">Points: 5000</span>
+    <div style={{ width: '100%', height: '100%', position: 'relative', overflow: 'hidden' }}>
+      <div ref={mountRef} style={{ width: '100%', height: '100%' }} />
+      
+      <div style={{
+        position: 'absolute',
+        bottom: '12px',
+        right: '12px',
+        display: 'flex',
+        flexDirection: 'column',
+        gap: '6px'
+      }}>
+        <span style={{
+          fontSize: '9px',
+          padding: '4px 8px',
+          background: 'rgba(0, 0, 0, 0.7)',
+          border: '1px solid rgba(0, 255, 65, 0.3)',
+          borderRadius: '4px',
+          color: '#00ff41',
+          fontFamily: 'monospace',
+          backdropFilter: 'blur(4px)'
+        }}>
+          Topic: {topic}
+        </span>
+        <span style={{
+          fontSize: '9px',
+          padding: '4px 8px',
+          background: 'rgba(0, 0, 0, 0.7)',
+          border: '1px solid rgba(0, 255, 65, 0.3)',
+          borderRadius: '4px',
+          color: '#00ff41',
+          fontFamily: 'monospace',
+          backdropFilter: 'blur(4px)'
+        }}>
+          Points: 5000
+        </span>
       </div>
-
-      <style jsx>{`
-        .lidar-view {
-          width: 100%;
-          height: 100%;
-          position: relative;
-          overflow: hidden;
-        }
-
-        .lidar-canvas {
-          width: 100%;
-          height: 100%;
-        }
-
-        .lidar-info {
-          position: absolute;
-          bottom: 12px;
-          right: 12px;
-          display: flex;
-          flex-direction: column;
-          gap: 6px;
-        }
-
-        .topic-badge,
-        .points-badge {
-          font-size: 9px;
-          padding: 4px 8px;
-          background: rgba(0, 0, 0, 0.7);
-          border: 1px solid rgba(0, 255, 65, 0.3);
-          border-radius: 4px;
-          color: #00ff41;
-          font-family: monospace;
-          backdrop-filter: blur(4px);
-        }
-      `}</style>
     </div>
   );
 };

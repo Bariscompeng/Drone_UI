@@ -3,10 +3,10 @@ import { Cpu, HardDrive, Activity } from 'lucide-react';
 
 const SystemStatus = () => {
   const [stats, setStats] = useState({
-    cpu: 45,
-    memory: 62,
-    disk: 78,
-    temperature: 45
+    cpu: 43.0,
+    memory: 60.5,
+    disk: 77.2,
+    temperature: 51.4
   });
 
   useEffect(() => {
@@ -15,7 +15,7 @@ const SystemStatus = () => {
         cpu: 40 + Math.random() * 20,
         memory: 60 + Math.random() * 10,
         disk: 75 + Math.random() * 8,
-        temperature: 40 + Math.random() * 15
+        temperature: 45 + Math.random() * 15
       });
     }, 2000);
 
@@ -28,180 +28,127 @@ const SystemStatus = () => {
     return '#00ff41';
   };
 
+  const styles = {
+    container: {
+      width: '100%',
+      height: '100%',
+      padding: '16px',
+      background: 'transparent',
+      overflow: 'auto',
+      display: 'flex',
+      alignItems: 'center',
+      justifyContent: 'center'
+    },
+    grid: {
+      display: 'grid',
+      gridTemplateColumns: '1fr 1fr',
+      gap: '12px',
+      width: '100%',
+      maxWidth: '600px'
+    },
+    card: {
+      background: 'rgba(0, 0, 0, 0.3)',
+      padding: '16px',
+      borderRadius: '8px',
+      border: '1px solid rgba(0, 255, 65, 0.1)',
+      display: 'flex',
+      flexDirection: 'column',
+      gap: '12px',
+      transition: 'all 0.3s'
+    },
+    header: {
+      display: 'flex',
+      alignItems: 'center',
+      gap: '8px',
+      color: '#8b92a0',
+      fontSize: '10px',
+      fontWeight: 700,
+      letterSpacing: '1px',
+      textTransform: 'uppercase'
+    },
+    value: (color) => ({
+      fontSize: '28px',
+      fontWeight: 700,
+      color: color,
+      textShadow: `0 0 10px ${color}`
+    }),
+    progressBar: {
+      width: '100%',
+      height: '8px',
+      background: 'rgba(0, 0, 0, 0.3)',
+      borderRadius: '4px',
+      overflow: 'hidden',
+      position: 'relative'
+    },
+    progressFill: (width, color) => ({
+      height: '100%',
+      width: `${width}%`,
+      background: color,
+      borderRadius: '4px',
+      transition: 'width 0.3s ease',
+      boxShadow: `0 0 10px ${color}`,
+      position: 'relative'
+    })
+  };
+
   return (
-    <div className="system-status">
-      <div className="status-grid">
-        <div className="status-item">
-          <div className="status-header">
-            <Cpu size={16} />
-            <span className="status-label">CPU USAGE</span>
+    <div style={styles.container}>
+      <div style={styles.grid}>
+        <div style={styles.card}>
+          <div style={styles.header}>
+            <Cpu size={14} />
+            <span>CPU USAGE</span>
           </div>
-          <div className="status-value" style={{ color: getStatusColor(stats.cpu) }}>
+          <div style={styles.value(getStatusColor(stats.cpu))}>
             {stats.cpu.toFixed(1)}%
           </div>
-          <div className="progress-bar">
-            <div 
-              className="progress-fill" 
-              style={{ 
-                width: `${stats.cpu}%`,
-                background: getStatusColor(stats.cpu)
-              }}
-            ></div>
+          <div style={styles.progressBar}>
+            <div style={styles.progressFill(stats.cpu, getStatusColor(stats.cpu))} />
           </div>
         </div>
 
-        <div className="status-item">
-          <div className="status-header">
-            <Activity size={16} />
-            <span className="status-label">MEMORY</span>
+        <div style={styles.card}>
+          <div style={styles.header}>
+            <Activity size={14} />
+            <span>MEMORY</span>
           </div>
-          <div className="status-value" style={{ color: getStatusColor(stats.memory) }}>
+          <div style={styles.value(getStatusColor(stats.memory))}>
             {stats.memory.toFixed(1)}%
           </div>
-          <div className="progress-bar">
-            <div 
-              className="progress-fill" 
-              style={{ 
-                width: `${stats.memory}%`,
-                background: getStatusColor(stats.memory)
-              }}
-            ></div>
+          <div style={styles.progressBar}>
+            <div style={styles.progressFill(stats.memory, getStatusColor(stats.memory))} />
           </div>
         </div>
 
-        <div className="status-item">
-          <div className="status-header">
-            <HardDrive size={16} />
-            <span className="status-label">DISK USAGE</span>
+        <div style={styles.card}>
+          <div style={styles.header}>
+            <HardDrive size={14} />
+            <span>DISK USAGE</span>
           </div>
-          <div className="status-value" style={{ color: getStatusColor(stats.disk) }}>
+          <div style={styles.value(getStatusColor(stats.disk))}>
             {stats.disk.toFixed(1)}%
           </div>
-          <div className="progress-bar">
-            <div 
-              className="progress-fill" 
-              style={{ 
-                width: `${stats.disk}%`,
-                background: getStatusColor(stats.disk)
-              }}
-            ></div>
+          <div style={styles.progressBar}>
+            <div style={styles.progressFill(stats.disk, getStatusColor(stats.disk))} />
           </div>
         </div>
 
-        <div className="status-item">
-          <div className="status-header">
-            <span className="temp-icon">🌡️</span>
-            <span className="status-label">TEMPERATURE</span>
+        <div style={styles.card}>
+          <div style={styles.header}>
+            <span style={{ fontSize: '14px' }}>🌡️</span>
+            <span>TEMPERATURE</span>
           </div>
-          <div className="status-value" style={{ color: getStatusColor(stats.temperature, { warning: 60, danger: 75 }) }}>
+          <div style={styles.value(getStatusColor(stats.temperature, { warning: 60, danger: 75 }))}>
             {stats.temperature.toFixed(1)}°C
           </div>
-          <div className="progress-bar">
-            <div 
-              className="progress-fill" 
-              style={{ 
-                width: `${stats.temperature}%`,
-                background: getStatusColor(stats.temperature, { warning: 60, danger: 75 })
-              }}
-            ></div>
+          <div style={styles.progressBar}>
+            <div style={styles.progressFill(
+              (stats.temperature / 100) * 100, 
+              getStatusColor(stats.temperature, { warning: 60, danger: 75 })
+            )} />
           </div>
         </div>
       </div>
-
-      <style jsx>{`
-        .system-status {
-          width: 100%;
-          height: 100%;
-          padding: 20px;
-          overflow: auto;
-        }
-
-        .status-grid {
-          display: grid;
-          grid-template-columns: 1fr 1fr;
-          gap: 20px;
-          height: 100%;
-        }
-
-        .status-item {
-          background: rgba(0, 0, 0, 0.2);
-          padding: 16px;
-          border-radius: 8px;
-          border: 1px solid rgba(0, 255, 65, 0.1);
-          display: flex;
-          flex-direction: column;
-          gap: 12px;
-          transition: all 0.3s;
-        }
-
-        .status-item:hover {
-          border-color: rgba(0, 255, 65, 0.3);
-          background: rgba(0, 0, 0, 0.3);
-        }
-
-        .status-header {
-          display: flex;
-          align-items: center;
-          gap: 8px;
-          color: #8b92a0;
-        }
-
-        .status-label {
-          font-size: 10px;
-          font-weight: 700;
-          letter-spacing: 1px;
-        }
-
-        .temp-icon {
-          font-size: 16px;
-        }
-
-        .status-value {
-          font-size: 28px;
-          font-weight: 700;
-          text-shadow: 0 0 10px currentColor;
-        }
-
-        .progress-bar {
-          width: 100%;
-          height: 8px;
-          background: rgba(255, 255, 255, 0.05);
-          border-radius: 4px;
-          overflow: hidden;
-          position: relative;
-        }
-
-        .progress-fill {
-          height: 100%;
-          border-radius: 4px;
-          transition: width 0.3s ease, background 0.3s ease;
-          box-shadow: 0 0 10px currentColor;
-          position: relative;
-          overflow: hidden;
-        }
-
-        .progress-fill::after {
-          content: '';
-          position: absolute;
-          top: 0;
-          left: 0;
-          right: 0;
-          bottom: 0;
-          background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.3), transparent);
-          animation: shimmer 2s infinite;
-        }
-
-        @keyframes shimmer {
-          0% { transform: translateX(-100%); }
-          100% { transform: translateX(100%); }
-        }
-
-        @media (max-width: 768px) {
-          .status-grid {
-            grid-template-columns: 1fr;
-          }
-        }
-      `}</style>
     </div>
   );
 };
