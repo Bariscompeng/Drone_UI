@@ -4,20 +4,188 @@ import { Settings, X } from 'lucide-react';
 import 'react-mosaic-component/react-mosaic-component.css';
 
 const MosaicLayout = ({ panels, renderPanel, onPanelClose, onPanelSettings, onLayoutChange }) => {
-  // Mosaic için başlangıç layout yapısı
   const createMosaicTree = (panelList) => {
     if (!panelList || panelList.length === 0) return null;
     if (panelList.length === 1) return panelList[0].id.toString();
     
-    // Sadece mevcut panelleri kullan
     const validPanels = panelList.filter(p => p && p.id);
     if (validPanels.length === 0) return null;
     if (validPanels.length === 1) return validPanels[0].id.toString();
     
     const ids = validPanels.map(p => p.id.toString());
     
-    // 6 panel için optimal layout
-    if (ids.length >= 6) {
+    // 10 panel - 2x5 veya 3x4 düzen
+    if (ids.length === 10) {
+      return {
+        direction: 'column',
+        first: {
+          direction: 'row',
+          first: ids[0],
+          second: {
+            direction: 'row',
+            first: ids[1],
+            second: {
+              direction: 'row',
+              first: ids[2],
+              second: ids[3],
+              splitPercentage: 50
+            },
+            splitPercentage: 50
+          },
+          splitPercentage: 25
+        },
+        second: {
+          direction: 'column',
+          first: {
+            direction: 'row',
+            first: ids[4],
+            second: {
+              direction: 'row',
+              first: ids[5],
+              second: {
+                direction: 'row',
+                first: ids[6],
+                second: ids[7],
+                splitPercentage: 50
+              },
+              splitPercentage: 50
+            },
+            splitPercentage: 25
+          },
+          second: {
+            direction: 'row',
+            first: ids[8],
+            second: ids[9],
+            splitPercentage: 50
+          },
+          splitPercentage: 50
+        },
+        splitPercentage: 40
+      };
+    }
+    
+    // 9 panel - 3x3 grid
+    if (ids.length === 9) {
+      return {
+        direction: 'column',
+        first: {
+          direction: 'row',
+          first: ids[0],
+          second: {
+            direction: 'row',
+            first: ids[1],
+            second: ids[2],
+            splitPercentage: 50
+          },
+          splitPercentage: 33.33
+        },
+        second: {
+          direction: 'column',
+          first: {
+            direction: 'row',
+            first: ids[3],
+            second: {
+              direction: 'row',
+              first: ids[4],
+              second: ids[5],
+              splitPercentage: 50
+            },
+            splitPercentage: 33.33
+          },
+          second: {
+            direction: 'row',
+            first: ids[6],
+            second: {
+              direction: 'row',
+              first: ids[7],
+              second: ids[8],
+              splitPercentage: 50
+            },
+            splitPercentage: 33.33
+          },
+          splitPercentage: 50
+        },
+        splitPercentage: 33.33
+      };
+    }
+    
+    // 8 panel - 2x4
+    if (ids.length === 8) {
+      return {
+        direction: 'column',
+        first: {
+          direction: 'row',
+          first: ids[0],
+          second: {
+            direction: 'row',
+            first: ids[1],
+            second: {
+              direction: 'row',
+              first: ids[2],
+              second: ids[3],
+              splitPercentage: 50
+            },
+            splitPercentage: 50
+          },
+          splitPercentage: 25
+        },
+        second: {
+          direction: 'row',
+          first: ids[4],
+          second: {
+            direction: 'row',
+            first: ids[5],
+            second: {
+              direction: 'row',
+              first: ids[6],
+              second: ids[7],
+              splitPercentage: 50
+            },
+            splitPercentage: 50
+          },
+          splitPercentage: 25
+        },
+        splitPercentage: 50
+      };
+    }
+    
+    // 7 panel
+    if (ids.length === 7) {
+      return {
+        direction: 'column',
+        first: {
+          direction: 'row',
+          first: ids[0],
+          second: {
+            direction: 'row',
+            first: ids[1],
+            second: {
+              direction: 'row',
+              first: ids[2],
+              second: ids[3],
+              splitPercentage: 50
+            },
+            splitPercentage: 50
+          },
+          splitPercentage: 25
+        },
+        second: {
+          direction: 'row',
+          first: ids[4],
+          second: {
+            direction: 'row',
+            first: ids[5],
+            second: ids[6],
+            splitPercentage: 50
+          },
+          splitPercentage: 33.33
+        },
+        splitPercentage: 50
+      };
+    }
+    
+    // 6 panel - 2x3
+    if (ids.length === 6) {
       return {
         direction: 'column',
         first: {
@@ -71,7 +239,7 @@ const MosaicLayout = ({ panels, renderPanel, onPanelClose, onPanelSettings, onLa
       };
     }
     
-    // 4 panel
+    // 4 panel - 2x2
     if (ids.length === 4) {
       return {
         direction: 'column',

@@ -1,156 +1,182 @@
 import React, { useState, useEffect } from 'react';
 import { useROSTopic } from '../../hooks/useROS';
+import { MapPin } from 'lucide-react';
 
 const GPSMap = ({ ros, topic = '/gps/fix' }) => {
-  const { data } = useROSTopic(ros, topic, 'sensor_msgs/NavSatFix');
-  const [coordinates, setCoordinates] = useState({ lat: 39.9334, lon: 32.8597 });
+  const { data } = useROSTopic(ros, topic, 'sensor_msgs/msg/NavSatFix', 500);
+  const [position, setPosition] = useState({ lat: 39.933400, lon: 32.859700 }); // Ankara default
+  const [mapType, setMapType] = useState('satellite');
 
   useEffect(() => {
     if (data && data.latitude && data.longitude) {
-      setCoordinates({ lat: data.latitude, lon: data.longitude });
+      console.log('📍 GPS data received:', data.latitude, data.longitude);
+      setPosition({
+        lat: data.latitude,
+        lon: data.longitude
+      });
     }
   }, [data]);
 
+  const getMapUrl = () => {
+    const { lat, lon } = position;
+    const zoom = 18;
+    
+    if (mapType === 'satellite') {
+      // Google Maps Satellite
+      return `https://www.google.com/maps/embed/v1/view?key=AIzaSyB41DRUbKWJHPxaFjMAwdrzWzbVKartNGg&center=${lat},${lon}&zoom=${zoom}&maptype=satellite`;
+    } else {
+      // OpenStreetMap
+      return `https://www.openstreetmap.org/export/embed.html?bbox=${lon-0.001},${lat-0.001},${lon+0.001},${lat+0.001}&layer=mapnik&marker=${lat},${lon}`;
+    }
+  };
+
+  const styles = {
+    container: {
+      width: '100%',
+      height: '100%',
+      position: 'relative',
+      background: '#0a1a0a',
+      overflow: 'hidden'
+    },
+    mapContainer: {
+      width: '100%',
+      height: '100%',
+      position: 'relative'
+    },
+    iframe: {
+      width: '100%',
+      height: '100%',
+      border: 'none',
+      filter: 'brightness(0.9) contrast(1.1)'
+    },
+    controls: {
+      position: 'absolute',
+      top: '12px',
+      right: '12px',
+      display: 'flex',
+      gap: '8px',
+      zIndex: 10
+    },
+    button: (active) => ({
+      padding: '8px 16px',
+      background: active ? '#00ff41' : 'rgba(0, 0, 0, 0.7)',
+      color: active ? '#0a0e1a' : '#00ff41',
+      border: `1px solid ${active ? '#00ff41' : 'rgba(0, 255, 65, 0.3)'}`,
+      borderRadius: '6px',
+      fontSize: '11px',
+      fontWeight: 600,
+      cursor: 'pointer',
+      backdropFilter: 'blur(4px)',
+      textTransform: 'uppercase',
+      letterSpacing: '0.5px',
+      transition: 'all 0.2s'
+    }),
+    info: {
+      position: 'absolute',
+      bottom: '12px',
+      left: '12px',
+      display: 'flex',
+      flexDirection: 'column',
+      gap: '6px',
+      zIndex: 10
+    },
+    badge: {
+      fontSize: '11px',
+      padding: '6px 10px',
+      background: 'rgba(0, 0, 0, 0.8)',
+      border: '1px solid rgba(0, 255, 65, 0.3)',
+      borderRadius: '6px',
+      color: '#00ff41',
+      fontFamily: 'monospace',
+      backdropFilter: 'blur(4px)',
+      display: 'flex',
+      alignItems: 'center',
+      gap: '6px'
+    },
+    marker: {
+      position: 'absolute',
+      top: '50%',
+      left: '50%',
+      transform: 'translate(-50%, -100%)',
+      zIndex: 5,
+      filter: 'drop-shadow(0 4px 8px rgba(0, 255, 65, 0.6))',
+      pointerEvents: 'none'
+    },
+    noData: {
+      width: '100%',
+      height: '100%',
+      display: 'flex',
+      flexDirection: 'column',
+      alignItems: 'center',
+      justifyContent: 'center',
+      gap: '16px',
+      color: '#00ff41'
+    }
+  };
+
   return (
-    <div className="gps-map">
-      <div className="map-placeholder">
-        <div className="map-grid"></div>
-        <div className="map-marker">
-          <div className="marker-dot"></div>
-          <div className="marker-pulse"></div>
+    <div style={styles.container}>
+      {data ? (
+        <div style={styles.mapContainer}>
+          <iframe
+            src={getMapUrl()}
+            style={styles.iframe}
+            loading="lazy"
+            title="GPS Map"
+          />
+          
+          <div style={styles.controls}>
+            <button
+              style={styles.button(mapType === 'map')}
+              onClick={() => setMapType('map')}
+              onMouseEnter={(e) => {
+                if (mapType !== 'map') e.target.style.background = 'rgba(0, 255, 65, 0.2)';
+              }}
+              onMouseLeave={(e) => {
+                if (mapType !== 'map') e.target.style.background = 'rgba(0, 0, 0, 0.7)';
+              }}
+            >
+              Map
+            </button>
+            <button
+              style={styles.button(mapType === 'satellite')}
+              onClick={() => setMapType('satellite')}
+              onMouseEnter={(e) => {
+                if (mapType !== 'satellite') e.target.style.background = 'rgba(0, 255, 65, 0.2)';
+              }}
+              onMouseLeave={(e) => {
+                if (mapType !== 'satellite') e.target.style.background = 'rgba(0, 0, 0, 0.7)';
+              }}
+            >
+              Satellite
+            </button>
+          </div>
+
+          <div style={styles.info}>
+            <div style={styles.badge}>
+              Lat: {position.lat.toFixed(6)}
+            </div>
+            <div style={styles.badge}>
+              Lon: {position.lon.toFixed(6)}
+            </div>
+            <div style={styles.badge}>
+              <MapPin size={14} />
+              {topic}
+            </div>
+          </div>
         </div>
-        <div className="map-overlay">
-          <button className="map-btn">MAP</button>
-          <button className="map-btn active">SATELLITE</button>
+      ) : (
+        <div style={styles.noData}>
+          <MapPin size={48} />
+          <div style={{ fontSize: '14px', fontWeight: 600 }}>
+            Waiting for GPS data...
+          </div>
+          <div style={{ fontSize: '11px', color: '#8b92a0', fontFamily: 'monospace' }}>
+            Topic: {topic}<br/>
+            ROS: {ros ? '✅ Connected' : '❌ Not connected'}
+          </div>
         </div>
-        <div className="map-info">
-          <span>Lat: {coordinates.lat.toFixed(6)}</span>
-          <span>Lon: {coordinates.lon.toFixed(6)}</span>
-          <span className="topic-label">Topic: {topic}</span>
-        </div>
-      </div>
-
-      <style jsx>{`
-        .gps-map {
-          width: 100%;
-          height: 100%;
-          position: relative;
-        }
-
-        .map-placeholder {
-          width: 100%;
-          height: 100%;
-          background: linear-gradient(145deg, #1a2a1a 0%, #0f1a0f 100%);
-          position: relative;
-          overflow: hidden;
-        }
-
-        .map-grid {
-          width: 100%;
-          height: 100%;
-          background-image: 
-            repeating-linear-gradient(0deg, transparent, transparent 20px, rgba(0, 255, 65, 0.05) 20px, rgba(0, 255, 65, 0.05) 21px),
-            repeating-linear-gradient(90deg, transparent, transparent 20px, rgba(0, 255, 65, 0.05) 20px, rgba(0, 255, 65, 0.05) 21px);
-        }
-
-        .map-marker {
-          position: absolute;
-          top: 50%;
-          left: 50%;
-          transform: translate(-50%, -50%);
-        }
-
-        .marker-dot {
-          width: 16px;
-          height: 16px;
-          background: #00ff41;
-          border-radius: 50%;
-          border: 3px solid #0a0e1a;
-          box-shadow: 0 0 20px rgba(0, 255, 65, 0.8);
-          position: relative;
-          z-index: 2;
-        }
-
-        .marker-pulse {
-          position: absolute;
-          top: 50%;
-          left: 50%;
-          transform: translate(-50%, -50%);
-          width: 40px;
-          height: 40px;
-          background: rgba(0, 255, 65, 0.3);
-          border-radius: 50%;
-          animation: pulse 2s ease-out infinite;
-        }
-
-        @keyframes pulse {
-          0% {
-            transform: translate(-50%, -50%) scale(0.5);
-            opacity: 1;
-          }
-          100% {
-            transform: translate(-50%, -50%) scale(2);
-            opacity: 0;
-          }
-        }
-
-        .map-overlay {
-          position: absolute;
-          top: 12px;
-          right: 12px;
-          display: flex;
-          gap: 6px;
-          z-index: 3;
-        }
-
-        .map-btn {
-          padding: 6px 12px;
-          font-size: 10px;
-          font-weight: 600;
-          background: rgba(0, 0, 0, 0.7);
-          color: #8b92a0;
-          border: 1px solid rgba(255, 255, 255, 0.1);
-          border-radius: 4px;
-          cursor: pointer;
-          transition: all 0.2s;
-          backdrop-filter: blur(4px);
-        }
-
-        .map-btn.active {
-          background: rgba(0, 255, 65, 0.2);
-          color: #00ff41;
-          border-color: #00ff41;
-        }
-
-        .map-btn:hover {
-          background: rgba(0, 255, 65, 0.1);
-          color: #00ff41;
-        }
-
-        .map-info {
-          position: absolute;
-          bottom: 12px;
-          left: 12px;
-          display: flex;
-          flex-direction: column;
-          gap: 4px;
-          font-size: 10px;
-          font-family: monospace;
-          color: #00ff41;
-          background: rgba(0, 0, 0, 0.7);
-          padding: 8px 12px;
-          border-radius: 4px;
-          border: 1px solid rgba(0, 255, 65, 0.3);
-          z-index: 3;
-          backdrop-filter: blur(4px);
-        }
-
-        .topic-label {
-          color: #5a6270;
-          font-size: 9px;
-          margin-top: 4px;
-        }
-      `}</style>
+      )}
     </div>
   );
 };

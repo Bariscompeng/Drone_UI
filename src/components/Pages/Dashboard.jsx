@@ -9,14 +9,22 @@ import SystemStatus from '../Panels/SystemStatus';
 import ArtificialHorizon from '../Panels/ArtificialHorizon';
 
 const Dashboard = ({ panels, onPanelClose, onPanelSettings, onLayoutChange, ros }) => {
+  console.log('📊 Dashboard render:', { 
+    panelCount: panels.length, 
+    ros: !!ros,
+    rosConnected: ros?.isConnected 
+  });
+
   const renderPanelContent = (panel) => {
+    console.log('🎨 Rendering panel:', panel.type, 'with ros:', !!ros);
+    
     switch (panel.type) {
       case 'camera':
-        return <RGBCamera topic={panel.topic} />;
+        return <RGBCamera ros={ros} topic={panel.topic} />;
       case 'thermal':
-        return <ThermalCamera topic={panel.topic} />;
+        return <ThermalCamera ros={ros} topic={panel.topic} />;
       case 'lidar':
-        return <LiDAR3D topic={panel.topic} />;
+        return <LiDAR3D ros={ros} topic={panel.topic} />;
       case 'gps':
         return <GPSMap ros={ros} topic={panel.topic} />;
       case 'incline':
@@ -26,7 +34,7 @@ const Dashboard = ({ panels, onPanelClose, onPanelSettings, onLayoutChange, ros 
       case 'horizon':
         return <ArtificialHorizon ros={ros} topic={panel.topic} />;
       default:
-        return <div>Unknown panel type</div>;
+        return <div>Unknown panel type: {panel.type}</div>;
     }
   };
 

@@ -15,7 +15,16 @@ function App() {
   const [settingsPanel, setSettingsPanel] = useState(null);
   const [showAddModal, setShowAddModal] = useState(false);
   const [mosaicLayout, setMosaicLayout] = useState(null);
-  const { ros, connected } = useROS();
+  
+  // ROS bağlantısı - localStorage'dan URL al
+  const rosUrl = localStorage.getItem('ros_url') || 'ws://192.168.1.117:9090';
+  const autoReconnect = localStorage.getItem('ros_auto_reconnect') !== 'false';
+  
+  const { ros, connected, error, reconnecting } = useROS({
+    url: rosUrl,
+    autoConnect: true,
+    reconnectInterval: 3000
+  });
 
   const DEFAULT_PANELS = [
     { id: 1, type: 'camera', title: 'RGB CAMERA', topic: '/camera/rgb/image_raw' },
@@ -49,7 +58,6 @@ function App() {
     return () => clearInterval(interval);
   }, []);
 
-  // İlk yükleme - localStorage kontrol et
   useEffect(() => {
     try {
       const savedPanels = localStorage.getItem('droneUI_panels');
@@ -57,11 +65,9 @@ function App() {
       
       if (savedPanels) {
         const parsed = JSON.parse(savedPanels);
-        // Validate panels
         if (Array.isArray(parsed) && parsed.length > 0) {
           setPanels(parsed);
         } else {
-          // Reset to default if invalid
           localStorage.removeItem('droneUI_panels');
           localStorage.removeItem('droneUI_mosaicLayout');
         }
@@ -88,9 +94,16 @@ function App() {
   };
 
   const handleAddPanel = (panelData) => {
-    if (panels.length >= 6) {
-      alert('Maximum 6 panels allowed!');
+    if (panels.length >= 10) {
+      alert('Maximum 10 panels allowed! Please remove a panel first.');
       return;
+    }
+
+    if (panels.length >= 8) {
+      const confirm = window.confirm(
+        `You currently have ${panels.length} panels. Adding more may affect performance. Continue?`
+      );
+      if (!confirm) return;
     }
 
     const newPanel = {
@@ -105,6 +118,8 @@ function App() {
     
     try {
       localStorage.setItem('droneUI_panels', JSON.stringify(newPanels));
+      localStorage.removeItem('droneUI_mosaicLayout');
+      setMosaicLayout(null);
     } catch (e) {
       console.error('Failed to save panels:', e);
     }
@@ -118,6 +133,8 @@ function App() {
     
     try {
       localStorage.setItem('droneUI_panels', JSON.stringify(newPanels));
+      localStorage.removeItem('droneUI_mosaicLayout');
+      setMosaicLayout(null);
     } catch (e) {
       console.error('Failed to save panels:', e);
     }
@@ -145,6 +162,7 @@ function App() {
   const handleEmergencyStop = (isActivated) => {
     if (isActivated) {
       console.log('🚨 EMERGENCY STOP ACTIVATED');
+      // TODO: Publish to /emergency_stop topic
     } else {
       console.log('✓ Emergency stop deactivated');
     }
@@ -173,7 +191,13 @@ function App() {
           />
         )}
         {currentPage === 'logs' && <Logs />}
-        {currentPage === 'settings' && <Settings />}
+        {currentPage === 'settings' && (
+          <Settings 
+            ros={ros} 
+            connected={connected} 
+            error={error}
+          />
+        )}
       </main>
 
       <EmergencyStop onEmergencyStop={handleEmergencyStop} />
@@ -191,6 +215,25 @@ function App() {
           onClose={() => setShowAddModal(false)}
           onAdd={handleAddPanel}
         />
+      )}
+
+      {/* Connection status indicator */}
+      {reconnecting && (
+        <div style={{
+          position: 'fixed',
+          bottom: '20px',
+          right: '20px',
+          padding: '12px 20px',
+          background: 'rgba(255, 170, 0, 0.9)',
+          color: '#000',
+          borderRadius: '8px',
+          fontSize: '13px',
+          fontWeight: 600,
+          zIndex: 2000,
+          boxShadow: '0 4px 12px rgba(0, 0, 0, 0.3)'
+        }}>
+          🔄 Reconnecting to ROS...
+        </div>
       )}
     </div>
   );
