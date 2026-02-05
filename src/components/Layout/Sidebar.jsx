@@ -1,11 +1,12 @@
-import React from 'react';
-import { Camera, Terminal, Settings } from 'lucide-react';
+import React, { useState } from 'react';
+import { Camera, Terminal, Settings, Gamepad2, ChevronDown, ChevronUp } from 'lucide-react';
 
-const Sidebar = ({ currentPage, onPageChange }) => {
+const Sidebar = ({ currentPage, onPageChange, teleopContent }) => {
+  const [teleopOpen, setTeleopOpen] = useState(false);
+
   const navItems = [
     { id: 'dashboard', icon: Camera, label: 'Dashboard' },
-    { id: 'logs', icon: Terminal, label: 'Logs' },
-    { id: 'settings', icon: Settings, label: 'Settings' }
+    { id: 'logs', icon: Terminal, label: 'Logs' }
   ];
 
   return (
@@ -24,6 +25,32 @@ const Sidebar = ({ currentPage, onPageChange }) => {
         );
       })}
 
+      {/* Teleop Collapsible Section */}
+      <div className="teleop-section">
+        <button
+          className={`nav-btn teleop-toggle ${teleopOpen ? 'active' : ''}`}
+          onClick={() => setTeleopOpen(!teleopOpen)}
+        >
+          <Gamepad2 size={20} />
+          <span>Teleop</span>
+          {teleopOpen ? <ChevronUp size={16} /> : <ChevronDown size={16} />}
+        </button>
+        
+        {teleopOpen && (
+          <div className="teleop-panel">
+            {teleopContent}
+          </div>
+        )}
+      </div>
+
+      <button
+        className={`nav-btn ${currentPage === 'settings' ? 'active' : ''}`}
+        onClick={() => onPageChange('settings')}
+      >
+        <Settings size={20} />
+        <span>Settings</span>
+      </button>
+
       <style jsx>{`
         .sidebar {
           position: fixed;
@@ -38,6 +65,21 @@ const Sidebar = ({ currentPage, onPageChange }) => {
           flex-direction: column;
           gap: 8px;
           z-index: 90;
+          overflow-y: auto;
+          overflow-x: hidden;
+        }
+
+        .sidebar::-webkit-scrollbar {
+          width: 6px;
+        }
+
+        .sidebar::-webkit-scrollbar-track {
+          background: rgba(0, 0, 0, 0.2);
+        }
+
+        .sidebar::-webkit-scrollbar-thumb {
+          background: rgba(0, 255, 65, 0.3);
+          border-radius: 3px;
         }
 
         .nav-btn {
@@ -55,6 +97,7 @@ const Sidebar = ({ currentPage, onPageChange }) => {
           transition: all 0.2s;
           text-align: left;
           border-left: 3px solid transparent;
+          flex-shrink: 0;
         }
 
         .nav-btn:hover {
@@ -73,16 +116,44 @@ const Sidebar = ({ currentPage, onPageChange }) => {
           flex: 1;
         }
 
+        .teleop-section {
+          display: flex;
+          flex-direction: column;
+          gap: 0;
+        }
+
+        .teleop-toggle {
+          justify-content: space-between;
+        }
+
+        .teleop-panel {
+          margin-top: 8px;
+          margin-left: 12px;
+          padding-left: 12px;
+          border-left: 2px solid rgba(0, 255, 65, 0.2);
+          animation: slideDown 0.3s ease-out;
+        }
+
+        @keyframes slideDown {
+          from {
+            opacity: 0;
+            max-height: 0;
+          }
+          to {
+            opacity: 1;
+            max-height: 2000px;
+          }
+        }
+
         @media (max-width: 768px) {
           .sidebar {
             width: 60px;
             padding: 24px 8px;
           }
-
-          .nav-btn span {
+          .nav-btn span,
+          .teleop-panel {
             display: none;
           }
-
           .nav-btn {
             justify-content: center;
             padding: 14px 8px;

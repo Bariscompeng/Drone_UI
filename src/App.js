@@ -1,10 +1,11 @@
 import React, { useState, useEffect } from 'react';
 import StatusBar from './components/Layout/StatusBar';
 import Sidebar from './components/Layout/Sidebar';
-import EmergencyStop from './components/Layout/EmergencyStop';
+// EmergencyStop component artık kullanılmıyor - StatusBar'a taşındı
 import Dashboard from './components/Pages/Dashboard';
 import Logs from './components/Pages/Logs';
 import Settings from './components/Pages/Settings';
+import Teleop from './components/Pages/TeleopCompact';
 import PanelSettings from './components/Modals/PanelSettings';
 import AddPanelModal from './components/Modals/AddPanelModal';
 import { useROS } from './hooks/useROS';
@@ -162,7 +163,33 @@ function App() {
   const handleEmergencyStop = (isActivated) => {
     if (isActivated) {
       console.log('🚨 EMERGENCY STOP ACTIVATED');
-      // TODO: Publish to /emergency_stop topic
+      
+      // ROS'a emergency stop mesajı gönder
+      if (ros && connected) {
+        try {
+          const ROSLIB = require('roslib');
+          
+          // cmd_vel topic'ine sıfır hız gönder
+          const cmdVelTopic = new ROSLIB.Topic({
+            ros: ros,
+            name: '/cmd_vel',
+            messageType: 'geometry_msgs/Twist'
+          });
+          
+          const stopMsg = new ROSLIB.Message({
+            linear: { x: 0, y: 0, z: 0 },
+            angular: { x: 0, y: 0, z: 0 }
+          });
+          
+          cmdVelTopic.publish(stopMsg);
+          console.log('✓ Emergency stop command sent to /cmd_vel');
+          
+        } catch (err) {
+          console.error('Failed to publish emergency stop:', err);
+        }
+      } else {
+        console.warn('ROS not connected - cannot send emergency stop');
+      }
     } else {
       console.log('✓ Emergency stop deactivated');
     }
@@ -173,11 +200,19 @@ function App() {
       <StatusBar 
         systemStatus={systemStatus}
         onAddPanel={() => setShowAddModal(true)}
+        onEmergencyStop={handleEmergencyStop}
       />
 
       <Sidebar 
         currentPage={currentPage}
         onPageChange={setCurrentPage}
+        teleopContent={
+          <Teleop 
+            ros={ros} 
+            connected={connected}
+            isEmbedded={true}
+          />
+        }
       />
 
       <main className="main-content">
@@ -200,7 +235,7 @@ function App() {
         )}
       </main>
 
-      <EmergencyStop onEmergencyStop={handleEmergencyStop} />
+      {/* ESKİ EMERGENCY STOP BUTONU KALDIRILDI - Artık StatusBar'da */}
 
       {settingsPanel && (
         <PanelSettings

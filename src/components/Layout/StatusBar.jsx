@@ -1,7 +1,17 @@
-import React from 'react';
-import { Wifi, WifiOff, Battery, Gauge, Plus } from 'lucide-react';
+import React, { useState } from 'react';
+import { Wifi, WifiOff, Battery, Gauge, Plus, Power } from 'lucide-react';
 
-const StatusBar = ({ systemStatus, onAddPanel }) => {
+const StatusBar = ({ systemStatus, onAddPanel, onEmergencyStop }) => {
+  const [isActivated, setIsActivated] = useState(false);
+
+  const handleEmergencyClick = () => {
+    const newState = !isActivated;
+    setIsActivated(newState);
+    if (onEmergencyStop) {
+      onEmergencyStop(newState);
+    }
+  };
+
   return (
     <div className="status-bar">
       <div className="status-left">
@@ -26,6 +36,17 @@ const StatusBar = ({ systemStatus, onAddPanel }) => {
       </div>
       
       <div className="status-right">
+        {/* Emergency Stop Button */}
+        <button 
+          className={`emergency-btn ${isActivated ? 'active' : ''}`}
+          onClick={handleEmergencyClick}
+          title={isActivated ? "Click to deactivate emergency stop" : "Emergency Stop"}
+        >
+          <Power size={18} />
+          <span>E-STOP</span>
+        </button>
+
+        {/* Add Panel Button */}
         <button className="add-panel-btn" onClick={onAddPanel}>
           <Plus size={16} />
           Add Panel
@@ -90,11 +111,50 @@ const StatusBar = ({ systemStatus, onAddPanel }) => {
           animation: blink 2s ease-in-out infinite;
         }
 
-        @keyframes blink {
-          0%, 100% { opacity: 1; }
-          50% { opacity: 0.5; }
+        .status-right {
+          display: flex;
+          gap: 12px;
+          align-items: center;
         }
 
+        /* Emergency Stop Button */
+        .emergency-btn {
+          display: flex;
+          align-items: center;
+          gap: 6px;
+          padding: 10px 16px;
+          background: rgba(255, 68, 68, 0.15);
+          color: #ff4444;
+          border: 2px solid rgba(255, 68, 68, 0.4);
+          border-radius: 6px;
+          font-weight: 700;
+          font-size: 12px;
+          cursor: pointer;
+          transition: all 0.2s;
+          letter-spacing: 0.5px;
+          text-transform: uppercase;
+        }
+
+        .emergency-btn:hover {
+          background: rgba(255, 68, 68, 0.25);
+          border-color: #ff4444;
+          transform: translateY(-1px);
+          box-shadow: 0 4px 12px rgba(255, 68, 68, 0.4);
+        }
+
+        .emergency-btn:active {
+          transform: translateY(0);
+        }
+
+        .emergency-btn.active {
+          background: linear-gradient(145deg, #cc0000, #ff0000);
+          color: #ffffff;
+          border-color: #ff0000;
+          animation: emergencyPulse 1s infinite, emergencyGlow 2s ease-in-out infinite;
+          box-shadow: 0 0 20px rgba(255, 0, 0, 0.6), inset 0 -2px 10px rgba(0, 0, 0, 0.3);
+        }
+
+        /* Add Panel Button */
         .add-panel-btn {
           display: flex;
           align-items: center;
@@ -118,6 +178,70 @@ const StatusBar = ({ systemStatus, onAddPanel }) => {
 
         .add-panel-btn:active {
           transform: translateY(0);
+        }
+
+        @keyframes blink {
+          0%, 100% { opacity: 1; }
+          50% { opacity: 0.5; }
+        }
+
+        @keyframes emergencyPulse {
+          0%, 100% {
+            box-shadow: 0 0 20px rgba(255, 0, 0, 0.6), inset 0 -2px 10px rgba(0, 0, 0, 0.3);
+          }
+          50% {
+            box-shadow: 0 0 30px rgba(255, 0, 0, 0.9), inset 0 -2px 10px rgba(0, 0, 0, 0.3);
+          }
+        }
+
+        @keyframes emergencyGlow {
+          0%, 100% {
+            filter: brightness(1);
+          }
+          50% {
+            filter: brightness(1.2);
+          }
+        }
+
+        @media (max-width: 1024px) {
+          .status-bar {
+            padding: 0 16px;
+          }
+
+          .status-center {
+            gap: 16px;
+          }
+
+          .status-item {
+            padding: 6px 12px;
+            font-size: 11px;
+          }
+
+          .emergency-btn,
+          .add-panel-btn {
+            padding: 8px 12px;
+            font-size: 11px;
+          }
+        }
+
+        @media (max-width: 768px) {
+          .status-item span {
+            display: none;
+          }
+
+          .status-center {
+            gap: 8px;
+          }
+
+          .emergency-btn span,
+          .add-panel-btn span {
+            display: none;
+          }
+
+          .emergency-btn,
+          .add-panel-btn {
+            padding: 8px;
+          }
         }
       `}</style>
     </div>
