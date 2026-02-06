@@ -4,6 +4,8 @@ import { Settings, X } from 'lucide-react';
 import 'react-mosaic-component/react-mosaic-component.css';
 
 const MosaicLayout = ({ panels, renderPanel, onPanelClose, onPanelSettings, onLayoutChange }) => {
+  // Global panel color from localStorage
+  const globalPanelColor = localStorage.getItem('panel_color') || '#ff3333';
   const createMosaicTree = (panelList) => {
     if (!panelList || panelList.length === 0) return null;
     if (panelList.length === 1) return panelList[0].id.toString();
@@ -324,8 +326,65 @@ const MosaicLayout = ({ panels, renderPanel, onPanelClose, onPanelSettings, onLa
     );
   }
 
+  // Custom title renderer with panel color
+  const renderTitle = (panel) => {
+    const panelColor = panel.color || '#ff3333';
+    return (
+      <div style={{
+        display: 'flex',
+        alignItems: 'center',
+        gap: '8px',
+        width: '100%'
+      }}>
+        <span style={{
+          fontSize: '12px',
+          fontWeight: 700,
+          textTransform: 'uppercase',
+          letterSpacing: '1px',
+          color: panelColor,
+          textShadow: `0 0 10px ${panelColor}60`
+        }}>
+          {panel.title}
+        </span>
+      </div>
+    );
+  };
+
   return (
     <div style={{ width: '100%', height: '100%', position: 'relative' }}>
+      <style>
+        {`
+          .mosaic-custom-theme .mosaic-window .mosaic-window-toolbar {
+            background: linear-gradient(180deg, #1a1a1a 0%, #0d0d0d 100%) !important;
+            border-bottom: 1px solid #333 !important;
+            box-shadow: none !important;
+          }
+          .mosaic-custom-theme .mosaic-window .mosaic-window-title {
+            color: inherit !important;
+            font-weight: 700 !important;
+            text-transform: uppercase !important;
+            letter-spacing: 1px !important;
+            font-size: 12px !important;
+          }
+          .mosaic-custom-theme .mosaic-window .mosaic-window-body {
+            background: #0a0a0a !important;
+          }
+          .mosaic-custom-theme .mosaic-window {
+            border-radius: 8px !important;
+            overflow: hidden !important;
+            border: 1px solid #2a2a2a !important;
+          }
+          .mosaic-custom-theme .mosaic-split {
+            background: transparent !important;
+          }
+          .mosaic-custom-theme .mosaic-split:hover {
+            background: #00ff4140 !important;
+          }
+          .mosaic-custom-theme .mosaic-tile {
+            margin: 4px !important;
+          }
+        `}
+      </style>
       <Mosaic
         renderTile={(id, path) => {
           const panel = ELEMENT_MAP[id];
@@ -343,51 +402,78 @@ const MosaicLayout = ({ panels, renderPanel, onPanelClose, onPanelSettings, onLa
             );
           }
 
+          const panelColor = globalPanelColor;
+
           return (
             <MosaicWindow
               path={path}
-              title={panel.title}
+              title=""
               createNode={() => panel.id.toString()}
-              toolbarControls={[
-                <button
-                  key="settings"
-                  onClick={() => onPanelSettings && onPanelSettings(panel)}
-                  style={{
-                    background: 'transparent',
-                    border: 'none',
-                    color: '#8b92a0',
-                    cursor: 'pointer',
-                    padding: '4px',
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'center'
-                  }}
-                  onMouseEnter={(e) => e.currentTarget.style.color = '#00ff41'}
-                  onMouseLeave={(e) => e.currentTarget.style.color = '#8b92a0'}
-                >
-                  <Settings size={14} />
-                </button>,
-                <button
-                  key="close"
-                  onClick={() => onPanelClose && onPanelClose(panel.id)}
-                  style={{
-                    background: 'transparent',
-                    border: 'none',
-                    color: '#8b92a0',
-                    cursor: 'pointer',
-                    padding: '4px',
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'center'
-                  }}
-                  onMouseEnter={(e) => e.currentTarget.style.color = '#ff4444'}
-                  onMouseLeave={(e) => e.currentTarget.style.color = '#8b92a0'}
-                >
-                  <X size={14} />
-                </button>
-              ]}
+              renderToolbar={() => (
+                <div style={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'space-between',
+                  width: '100%',
+                  padding: '0 12px',
+                  height: '100%',
+                  background: 'linear-gradient(180deg, #1a1a1a 0%, #0d0d0d 100%)',
+                  borderBottom: `2px solid ${panelColor}`
+                }}>
+                  <span style={{
+                    fontSize: '12px',
+                    fontWeight: 700,
+                    textTransform: 'uppercase',
+                    letterSpacing: '1px',
+                    color: panelColor,
+                    textShadow: `0 0 10px ${panelColor}60`
+                  }}>
+                    {panel.title}
+                  </span>
+                  <div style={{ display: 'flex', gap: '4px' }}>
+                    <button
+                      onClick={() => onPanelSettings && onPanelSettings(panel)}
+                      style={{
+                        background: 'transparent',
+                        border: 'none',
+                        color: '#666',
+                        cursor: 'pointer',
+                        padding: '4px',
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        borderRadius: '4px',
+                        transition: 'all 0.2s'
+                      }}
+                      onMouseEnter={(e) => e.currentTarget.style.color = panelColor}
+                      onMouseLeave={(e) => e.currentTarget.style.color = '#666'}
+                    >
+                      <Settings size={14} />
+                    </button>
+                    <button
+                      onClick={() => onPanelClose && onPanelClose(panel.id)}
+                      style={{
+                        background: 'transparent',
+                        border: 'none',
+                        color: '#666',
+                        cursor: 'pointer',
+                        padding: '4px',
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        borderRadius: '4px',
+                        transition: 'all 0.2s'
+                      }}
+                      onMouseEnter={(e) => e.currentTarget.style.color = '#ff4444'}
+                      onMouseLeave={(e) => e.currentTarget.style.color = '#666'}
+                    >
+                      <X size={14} />
+                    </button>
+                  </div>
+                </div>
+              )}
             >
-              <div style={{ width: '100%', height: '100%', overflow: 'hidden' }}>
+              <div style={{ width: '100%', height: '100%', overflow: 'hidden', background: '#0a0a0a' }}>
                 {renderPanel(panel)}
               </div>
             </MosaicWindow>

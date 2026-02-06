@@ -18,6 +18,7 @@ const Dashboard = ({ panels, onPanelClose, onPanelSettings, onLayoutChange, ros 
   const renderPanelContent = (panel) => {
     console.log('🎨 Rendering panel:', panel.type, 'with ros:', !!ros);
     
+    // Panel içeriği - renk gerekmez, normal render edilir
     switch (panel.type) {
       case 'camera':
         return <RGBCamera ros={ros} topic={panel.topic} />;

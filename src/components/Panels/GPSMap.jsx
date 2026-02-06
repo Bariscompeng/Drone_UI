@@ -35,7 +35,7 @@ const GPSMap = ({ ros, topic = '/gps/fix' }) => {
       width: '100%',
       height: '100%',
       position: 'relative',
-      background: '#0a1a0a',
+      background: '#0a0a0a',
       overflow: 'hidden'
     },
     mapContainer: {
@@ -110,7 +110,8 @@ const GPSMap = ({ ros, topic = '/gps/fix' }) => {
       alignItems: 'center',
       justifyContent: 'center',
       gap: '16px',
-      color: '#00ff41'
+      color: '#00ff41',
+      background: '#0a0a0a'
     }
   };
 

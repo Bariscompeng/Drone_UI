@@ -1,11 +1,25 @@
 import React, { useState } from 'react';
-import { RotateCcw, Trash2, Wifi, WifiOff } from 'lucide-react';
+import { RotateCcw, Trash2, Wifi, WifiOff, Palette } from 'lucide-react';
 
 const Settings = ({ ros, connected, error }) => {
   const [rosUrl, setRosUrl] = useState(localStorage.getItem('ros_url') || 'ws://192.168.1.117:9090');
   const [autoReconnect, setAutoReconnect] = useState(
     localStorage.getItem('ros_auto_reconnect') !== 'false'
   );
+  const [panelColor, setPanelColor] = useState(
+    localStorage.getItem('panel_color') || '#ff3333'
+  );
+
+  const presetColors = [
+    { name: 'Red', color: '#ff3333' },
+    { name: 'Matrix Green', color: '#00ff41' },
+    { name: 'Cyber Blue', color: '#00aaff' },
+    { name: 'Purple', color: '#a855f7' },
+    { name: 'Cyan', color: '#00ffff' },
+    { name: 'Orange', color: '#ff9500' },
+    { name: 'Pink', color: '#ff2d55' },
+    { name: 'Yellow', color: '#ffcc00' }
+  ];
 
   const handleResetLayout = () => {
     if (window.confirm('Reset all panels to default layout? This cannot be undone.')) {
@@ -26,6 +40,11 @@ const Settings = ({ ros, connected, error }) => {
     localStorage.setItem('ros_url', rosUrl);
     localStorage.setItem('ros_auto_reconnect', autoReconnect.toString());
     alert('ROS settings saved! Please reload the page for changes to take effect.');
+  };
+
+  const handleSavePanelColor = () => {
+    localStorage.setItem('panel_color', panelColor);
+    window.location.reload();
   };
 
   const styles = {
@@ -166,6 +185,67 @@ const Settings = ({ ros, connected, error }) => {
       fontSize: '12px',
       color: '#8b92a0',
       lineHeight: '1.6'
+    },
+    colorPickerWrapper: {
+      display: 'flex',
+      gap: '12px',
+      alignItems: 'center',
+      marginBottom: '16px'
+    },
+    colorInput: {
+      width: '60px',
+      height: '50px',
+      border: '2px solid rgba(255, 255, 255, 0.1)',
+      borderRadius: '8px',
+      cursor: 'pointer',
+      background: 'transparent'
+    },
+    colorPreview: {
+      width: '50px',
+      height: '50px',
+      borderRadius: '8px',
+      border: '2px solid rgba(255, 255, 255, 0.1)',
+      flexShrink: 0
+    },
+    colorTextInput: {
+      flex: 1,
+      padding: '12px',
+      background: 'rgba(0, 0, 0, 0.3)',
+      border: '1px solid rgba(255, 255, 255, 0.1)',
+      borderRadius: '8px',
+      color: '#e0e0e0',
+      fontSize: '14px',
+      fontFamily: 'monospace',
+      textTransform: 'uppercase'
+    },
+    presetColors: {
+      display: 'grid',
+      gridTemplateColumns: 'repeat(8, 1fr)',
+      gap: '8px',
+      marginBottom: '20px'
+    },
+    presetColorBtn: {
+      width: '100%',
+      aspectRatio: '1',
+      borderRadius: '8px',
+      cursor: 'pointer',
+      transition: 'all 0.2s',
+      padding: 0
+    },
+    previewPanel: {
+      border: '2px solid',
+      borderRadius: '12px',
+      overflow: 'hidden',
+      background: '#0a0a0a',
+      marginBottom: '20px'
+    },
+    previewHeader: {
+      padding: '12px 16px',
+      fontWeight: 700,
+      fontSize: '12px',
+      textTransform: 'uppercase',
+      letterSpacing: '1px',
+      background: 'linear-gradient(180deg, #1a1a1a 0%, #0d0d0d 100%)'
     }
   };
 
@@ -174,6 +254,91 @@ const Settings = ({ ros, connected, error }) => {
       <div style={styles.header}>
         <h1 style={styles.title}>Settings</h1>
         <p style={styles.subtitle}>Configure your drone control interface</p>
+      </div>
+
+      {/* Panel Appearance Settings */}
+      <div style={styles.section}>
+        <div style={styles.sectionTitle}>
+          <Palette size={20} style={{ color: panelColor }} />
+          <span>Panel Appearance</span>
+        </div>
+        <p style={styles.sectionDesc}>
+          Customize the color theme for all panels in the dashboard.
+        </p>
+
+        {/* Color Picker */}
+        <div style={styles.colorPickerWrapper}>
+          <input
+            type="color"
+            value={panelColor}
+            onChange={(e) => setPanelColor(e.target.value)}
+            style={styles.colorInput}
+          />
+          <div style={{
+            ...styles.colorPreview,
+            background: panelColor,
+            boxShadow: `0 0 20px ${panelColor}50`
+          }} />
+          <input
+            type="text"
+            value={panelColor}
+            onChange={(e) => setPanelColor(e.target.value)}
+            style={styles.colorTextInput}
+            placeholder="#ff3333"
+          />
+        </div>
+
+        {/* Preset Colors */}
+        <div style={styles.presetColors}>
+          {presetColors.map(preset => (
+            <button
+              key={preset.color}
+              onClick={() => setPanelColor(preset.color)}
+              style={{
+                ...styles.presetColorBtn,
+                background: preset.color,
+                border: panelColor === preset.color ? `3px solid ${preset.color}` : '2px solid rgba(255, 255, 255, 0.2)',
+                boxShadow: panelColor === preset.color ? `0 0 15px ${preset.color}80` : 'none',
+                transform: panelColor === preset.color ? 'scale(1.1)' : 'scale(1)'
+              }}
+              title={preset.name}
+            />
+          ))}
+        </div>
+
+        {/* Preview */}
+        <label style={styles.label}>PREVIEW</label>
+        <div style={{
+          ...styles.previewPanel,
+          borderColor: panelColor
+        }}>
+          <div style={{
+            ...styles.previewHeader,
+            borderBottom: `2px solid ${panelColor}`,
+            color: panelColor,
+            textShadow: `0 0 10px ${panelColor}60`
+          }}>
+            SAMPLE PANEL
+          </div>
+          <div style={{ padding: '24px', textAlign: 'center', color: '#666' }}>
+            Panel content preview
+          </div>
+        </div>
+
+        <div style={styles.buttonGroup}>
+          <button 
+            style={{
+              ...styles.button,
+              background: `${panelColor}20`,
+              borderColor: panelColor,
+              color: panelColor
+            }}
+            onClick={handleSavePanelColor}
+          >
+            <Palette size={16} />
+            Apply Color to All Panels
+          </button>
+        </div>
       </div>
 
       {/* ROS Connection Settings */}
@@ -328,7 +493,7 @@ const Settings = ({ ros, connected, error }) => {
           <strong style={{ color: '#e0e0e0' }}>Version:</strong> 1.0.0<br/>
           <strong style={{ color: '#e0e0e0' }}>ROS Bridge:</strong> {rosUrl}<br/>
           <strong style={{ color: '#e0e0e0' }}>Connection:</strong> {connected ? '✅ Active' : '❌ Inactive'}<br/>
-          <strong style={{ color: '#e0e0e0' }}>Panel Types:</strong> 7<br/>
+          <strong style={{ color: '#e0e0e0' }}>Panel Color:</strong> <span style={{ color: panelColor }}>{panelColor}</span><br/>
           <strong style={{ color: '#e0e0e0' }}>Max Panels:</strong> 10
         </div>
       </div>

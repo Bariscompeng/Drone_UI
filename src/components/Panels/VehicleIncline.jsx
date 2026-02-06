@@ -28,7 +28,7 @@ const VehicleIncline = ({ ros, topic = '/imu/data' }) => {
       height: '100%',
       display: 'flex',
       flexDirection: 'column',
-      background: 'linear-gradient(145deg, rgba(0, 0, 0, 0.4) 0%, rgba(0, 0, 0, 0.2) 100%)',
+      background: '#0a0a0a',
       overflow: 'hidden'
     },
     row: {
