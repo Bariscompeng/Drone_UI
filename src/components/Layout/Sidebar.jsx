@@ -1,16 +1,14 @@
 import React, { useState } from 'react';
-import { Camera, Terminal, Settings, Gamepad2, ChevronDown, ChevronUp, Maximize2 } from 'lucide-react';
-//                                                                              ^^^^^^^^^ YENİ EKLENEN ICON
+import { Camera, Terminal, Settings, Gamepad2, ChevronDown, ChevronUp, Maximize2, BarChart3 } from 'lucide-react';
 
 const Sidebar = ({ currentPage, onPageChange, teleopContent }) => {
   const [teleopOpen, setTeleopOpen] = useState(false);
 
   const navItems = [
     { id: 'dashboard', icon: Camera, label: 'Dashboard' },
+    { id: 'telemetry', icon: BarChart3, label: 'Telemetry' },
     { id: 'logs', icon: Terminal, label: 'Logs' },
-    // ====== YENİ EKLENEN MENÜ ÖĞESİ ======
     { id: 'slam-config', icon: Maximize2, label: 'SLAM Config' }
-    // ======================================
   ];
 
   return (
