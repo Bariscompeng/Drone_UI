@@ -6,6 +6,7 @@ import Dashboard from './components/Pages/Dashboard';
 import Logs from './components/Pages/Logs';
 import Settings from './components/Pages/Settings';
 import Teleop from './components/Pages/TeleopCompact';
+import SlamConfiguration from './components/Pages/SlamConfiguration';
 import PanelSettings from './components/Modals/PanelSettings';
 import AddPanelModal from './components/Modals/AddPanelModal';
 import { useROS } from './hooks/useROS';
@@ -226,6 +227,13 @@ function App() {
           />
         )}
         {currentPage === 'logs' && <Logs />}
+        {/* GÜNCELLEME: ros ve connected props eklendi */}
+        {currentPage === 'slam-config' && (
+          <SlamConfiguration 
+            ros={ros} 
+            connected={connected}
+          />
+        )}
         {currentPage === 'settings' && (
           <Settings 
             ros={ros} 
