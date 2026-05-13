@@ -71,9 +71,11 @@ export const useROS = (config = {}) => {
   return { ros, connected, error, reconnecting, connect };
 };
 
-export const useROSTopic = (ros, topicName, messageType, throttleRate = 100) => {
+export const useROSTopic = (ros, topicName, messageType, throttleRate = 100, options = {}) => {
   const [data, setData] = useState(null);
   const [lastUpdate, setLastUpdate] = useState(null);
+
+  const { compression = 'cbor', queueLength = 1, queueSize = 1 } = options;
 
   useEffect(() => {
     console.log('🎯 useROSTopic called:', { ros: !!ros, topicName, messageType });
@@ -89,16 +91,13 @@ export const useROSTopic = (ros, topicName, messageType, throttleRate = 100) => 
       ros: ros,
       name: topicName,
       messageType: messageType,
-      throttle_rate: throttleRate
+      throttle_rate: throttleRate,
+      queue_length: queueLength,
+      queue_size:   queueSize,
+      compression:  compression,
     });
 
     const handleMessage = (message) => {
-      console.log('📨 Received message from', topicName, ':', {
-        width: message.width,
-        height: message.height,
-        encoding: message.encoding,
-        dataLength: message.data?.length
-      });
       setData(message);
       setLastUpdate(new Date());
     };
@@ -110,7 +109,7 @@ export const useROSTopic = (ros, topicName, messageType, throttleRate = 100) => 
       console.log('🔌 Unsubscribing from topic:', topicName);
       topic.unsubscribe(handleMessage);
     };
-  }, [ros, topicName, messageType, throttleRate]);
+  }, [ros, topicName, messageType, throttleRate, compression, queueLength, queueSize]);
 
   return { data, lastUpdate };
 };

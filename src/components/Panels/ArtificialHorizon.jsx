@@ -1,26 +1,49 @@
 import React, { useState, useEffect } from 'react';
 import { useROSTopic } from '../../hooks/useROS';
 
-const ArtificialHorizon = ({ ros, topic = '/imu/data' }) => {
-  const { data } = useROSTopic(ros, topic, 'sensor_msgs/Imu');
+/**
+ * Livox IMU orientation quaternion her zaman 0,0,0,1 gelir.
+ * Pitch ve roll, linear_acceleration'dan hesaplanır:
+ *   pitch = atan2(-ax, sqrt(ay² + az²))
+ *   roll  = atan2(ay, az)
+ */
+const ArtificialHorizon = ({ ros, topic = '/livox/imu' }) => {
+  const { data } = useROSTopic(ros, topic, 'sensor_msgs/msg/Imu');
   const [angles, setAngles] = useState({ pitch: 0, roll: 0 });
 
   useEffect(() => {
-    if (data && data.orientation) {
-      const { x, y, z, w } = data.orientation;
-      
-      // Quaternion to Euler
+    if (!data) return;
+
+    // Önce gerçek quaternion dene
+    const { x, y, z, w } = data.orientation || {};
+    const hasRealOrientation = w !== undefined && !(x === 0 && y === 0 && z === 0 && w === 1);
+
+    if (hasRealOrientation) {
       const sinr_cosp = 2 * (w * x + y * z);
       const cosr_cosp = 1 - 2 * (x * x + y * y);
       const roll = Math.atan2(sinr_cosp, cosr_cosp) * (180 / Math.PI);
-      
       const sinp = 2 * (w * y - z * x);
-      const pitch = Math.abs(sinp) >= 1 
+      const pitch = Math.abs(sinp) >= 1
         ? Math.sign(sinp) * 90
         : Math.asin(sinp) * (180 / Math.PI);
-      
       setAngles({ pitch, roll });
+      return;
     }
+
+    // Orientation identity → ivmeden hesapla
+    const acc = data.linear_acceleration;
+    if (!acc) return;
+
+    const ax = acc.x ?? 0;
+    const ay = acc.y ?? 0;
+    const az = acc.z ?? 0;
+
+    if (ax === 0 && ay === 0 && az === 0) return;
+
+    const pitch = Math.atan2(-ax, Math.sqrt(ay * ay + az * az)) * (180 / Math.PI);
+    const roll  = Math.atan2(ay, az) * (180 / Math.PI);
+
+    setAngles({ pitch, roll });
   }, [data]);
 
   const styles = {
@@ -57,7 +80,7 @@ const ArtificialHorizon = ({ ros, topic = '/imu/data' }) => {
       position: 'absolute',
       width: '200%',
       height: '200%',
-      transition: 'transform 0.3s ease',
+      transition: 'transform 0.15s ease',
       transform: `rotate(${angles.roll}deg) translateY(${angles.pitch * 3}px)`
     },
     sky: {
@@ -86,7 +109,6 @@ const ArtificialHorizon = ({ ros, topic = '/imu/data' }) => {
       boxShadow: '0 0 10px rgba(255, 255, 255, 0.8)',
       transform: 'translateY(-50%)'
     },
-    // Pitch ladder
     pitchLadder: {
       position: 'absolute',
       width: '100%',
@@ -96,7 +118,6 @@ const ArtificialHorizon = ({ ros, topic = '/imu/data' }) => {
       transform: 'translate(-50%, -50%)',
       pointerEvents: 'none'
     },
-    // Center indicator (fixed)
     centerIndicator: {
       position: 'absolute',
       top: '50%',
@@ -139,7 +160,6 @@ const ArtificialHorizon = ({ ros, topic = '/imu/data' }) => {
       boxShadow: '0 0 15px rgba(255, 170, 0, 1)',
       border: '2px solid #000'
     },
-    // Roll indicator
     rollScale: {
       position: 'absolute',
       width: '100%',
@@ -172,7 +192,6 @@ const ArtificialHorizon = ({ ros, topic = '/imu/data' }) => {
       boxShadow: '0 0 10px rgba(255, 170, 0, 0.8)',
       zIndex: 5
     },
-    // Angle displays
     angleDisplay: {
       position: 'absolute',
       bottom: '10px',
@@ -189,7 +208,6 @@ const ArtificialHorizon = ({ ros, topic = '/imu/data' }) => {
       border: '1px solid rgba(0, 255, 65, 0.3)',
       backdropFilter: 'blur(4px)'
     },
-    // Pitch marks
     pitchMark: (degrees) => ({
       position: 'absolute',
       left: '50%',
@@ -205,14 +223,13 @@ const ArtificialHorizon = ({ ros, topic = '/imu/data' }) => {
       whiteSpace: 'nowrap'
     }),
     pitchLine: (width) => ({
-      width: width,
+      width,
       height: '2px',
       background: '#ffffff',
       boxShadow: '0 0 5px rgba(255, 255, 255, 0.5)'
     })
   };
 
-  // Render pitch ladder
   const renderPitchLadder = () => {
     const marks = [];
     for (let i = -90; i <= 90; i += 10) {
@@ -229,7 +246,6 @@ const ArtificialHorizon = ({ ros, topic = '/imu/data' }) => {
     return marks;
   };
 
-  // Render roll scale
   const renderRollScale = () => {
     const marks = [];
     for (let i = -60; i <= 60; i += 10) {
@@ -241,39 +257,29 @@ const ArtificialHorizon = ({ ros, topic = '/imu/data' }) => {
   return (
     <div style={styles.container}>
       <div style={styles.instrument}>
-        {/* Roll scale */}
-        <div style={styles.rollScale}>
-          {renderRollScale()}
-        </div>
+        <div style={styles.rollScale}>{renderRollScale()}</div>
 
-        {/* Horizon */}
         <div style={styles.horizon}>
-          {/* Sky */}
           <div style={styles.sky}>
-            <div style={styles.pitchLadder}>
-              {renderPitchLadder()}
-            </div>
+            <div style={styles.pitchLadder}>{renderPitchLadder()}</div>
           </div>
-          
-          {/* Ground */}
           <div style={styles.ground} />
-          
-          {/* Horizon line */}
           <div style={styles.horizonLine} />
         </div>
 
-        {/* Center indicator (wings) */}
         <div style={styles.centerIndicator}>
           <div style={styles.wingLeft} />
           <div style={styles.wingRight} />
           <div style={styles.centerDot} />
         </div>
 
-        {/* Roll pointer */}
-        <div style={{ ...styles.rollPointer, transform: `translateX(-50%) rotate(${-angles.roll + 180}deg)`, transformOrigin: '50% 180px' }} />
+        <div style={{
+          ...styles.rollPointer,
+          transform: `translateX(-50%) rotate(${-angles.roll + 180}deg)`,
+          transformOrigin: '50% 180px'
+        }} />
       </div>
 
-      {/* Angle display */}
       <div style={styles.angleDisplay}>
         <div>
           <span style={{ color: '#8b92a0', fontSize: '10px' }}>PITCH </span>

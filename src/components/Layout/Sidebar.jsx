@@ -1,14 +1,15 @@
 import React, { useState } from 'react';
-import { Camera, Terminal, Settings, Gamepad2, ChevronDown, ChevronUp, Maximize2, BarChart3 } from 'lucide-react';
+import { Camera, Terminal, Settings, Gamepad2, ChevronDown, ChevronUp, Maximize2, BarChart3, ScanLine } from 'lucide-react';
 
 const Sidebar = ({ currentPage, onPageChange, teleopContent }) => {
   const [teleopOpen, setTeleopOpen] = useState(false);
 
   const navItems = [
-    { id: 'dashboard', icon: Camera, label: 'Dashboard' },
-    { id: 'telemetry', icon: BarChart3, label: 'Telemetry' },
-    { id: 'logs', icon: Terminal, label: 'Logs' },
-    { id: 'slam-config', icon: Maximize2, label: 'SLAM Config' }
+    { id: 'dashboard',  icon: Camera,    label: 'Dashboard'  },
+    { id: 'lidar',      icon: ScanLine,  label: 'LiDAR'      },
+    { id: 'telemetry',  icon: BarChart3, label: 'Telemetry'  },
+    { id: 'logs',       icon: Terminal,  label: 'Logs'       },
+    { id: 'slam-config',icon: Maximize2, label: 'SLAM Config'},
   ];
 
   return (
@@ -71,18 +72,9 @@ const Sidebar = ({ currentPage, onPageChange, teleopContent }) => {
           overflow-x: hidden;
         }
 
-        .sidebar::-webkit-scrollbar {
-          width: 6px;
-        }
-
-        .sidebar::-webkit-scrollbar-track {
-          background: rgba(0, 0, 0, 0.2);
-        }
-
-        .sidebar::-webkit-scrollbar-thumb {
-          background: rgba(0, 255, 65, 0.3);
-          border-radius: 3px;
-        }
+        .sidebar::-webkit-scrollbar { width: 6px; }
+        .sidebar::-webkit-scrollbar-track { background: rgba(0,0,0,0.2); }
+        .sidebar::-webkit-scrollbar-thumb { background: rgba(0,255,65,0.3); border-radius: 3px; }
 
         .nav-btn {
           display: flex;
@@ -102,64 +94,33 @@ const Sidebar = ({ currentPage, onPageChange, teleopContent }) => {
           flex-shrink: 0;
         }
 
-        .nav-btn:hover {
-          background: rgba(0, 255, 65, 0.1);
-          color: #00ff41;
-        }
-
+        .nav-btn:hover { background: rgba(0,255,65,0.1); color: #00ff41; }
         .nav-btn.active {
-          background: rgba(0, 255, 65, 0.15);
+          background: rgba(0,255,65,0.15);
           color: #00ff41;
           border-left-color: #00ff41;
-          box-shadow: 0 0 20px rgba(0, 255, 65, 0.1);
+          box-shadow: 0 0 20px rgba(0,255,65,0.1);
         }
+        .nav-btn span { flex: 1; }
 
-        .nav-btn span {
-          flex: 1;
-        }
-
-        .teleop-section {
-          display: flex;
-          flex-direction: column;
-          gap: 0;
-        }
-
-        .teleop-toggle {
-          justify-content: space-between;
-        }
-
+        .teleop-section { display: flex; flex-direction: column; gap: 0; }
+        .teleop-toggle  { justify-content: space-between; }
         .teleop-panel {
-          margin-top: 8px;
-          margin-left: 12px;
+          margin-top: 8px; margin-left: 12px;
           padding-left: 12px;
-          border-left: 2px solid rgba(0, 255, 65, 0.2);
+          border-left: 2px solid rgba(0,255,65,0.2);
           animation: slideDown 0.3s ease-out;
         }
 
         @keyframes slideDown {
-          from {
-            opacity: 0;
-            max-height: 0;
-          }
-          to {
-            opacity: 1;
-            max-height: 2000px;
-          }
+          from { opacity: 0; max-height: 0; }
+          to   { opacity: 1; max-height: 2000px; }
         }
 
         @media (max-width: 768px) {
-          .sidebar {
-            width: 60px;
-            padding: 24px 8px;
-          }
-          .nav-btn span,
-          .teleop-panel {
-            display: none;
-          }
-          .nav-btn {
-            justify-content: center;
-            padding: 14px 8px;
-          }
+          .sidebar { width: 60px; padding: 24px 8px; }
+          .nav-btn span, .teleop-panel { display: none; }
+          .nav-btn { justify-content: center; padding: 14px 8px; }
         }
       `}</style>
     </div>

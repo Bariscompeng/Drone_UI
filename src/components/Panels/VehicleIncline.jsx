@@ -1,25 +1,50 @@
 import React, { useState, useEffect } from 'react';
 import { useROSTopic } from '../../hooks/useROS';
 
-const VehicleIncline = ({ ros, topic = '/imu/data' }) => {
-  const { data } = useROSTopic(ros, topic, 'sensor_msgs/Imu');
-  const [angles, setAngles] = useState({ pitch: 2.1, roll: 1.6 });
+/**
+ * Livox IMU orientation quaternion her zaman 0,0,0,1 gelir (hesaplanmaz).
+ * Pitch ve roll, linear_acceleration'dan hesaplanır:
+ *   pitch = atan2(-ax, sqrt(ay² + az²))
+ *   roll  = atan2(ay, az)
+ */
+const VehicleIncline = ({ ros, topic = '/livox/imu' }) => {
+  const { data } = useROSTopic(ros, topic, 'sensor_msgs/msg/Imu');
+  const [angles, setAngles] = useState({ pitch: 0, roll: 0 });
 
   useEffect(() => {
-    if (data && data.orientation) {
-      const { x, y, z, w } = data.orientation;
-      
+    if (!data) return;
+
+    // Önce orientation dene (gerçek quaternion varsa kullan)
+    const { x, y, z, w } = data.orientation || {};
+    const hasRealOrientation = w !== undefined && !(x === 0 && y === 0 && z === 0 && w === 1);
+
+    if (hasRealOrientation) {
       const sinr_cosp = 2 * (w * x + y * z);
       const cosr_cosp = 1 - 2 * (x * x + y * y);
       const roll = Math.atan2(sinr_cosp, cosr_cosp) * (180 / Math.PI);
-      
       const sinp = 2 * (w * y - z * x);
-      const pitch = Math.abs(sinp) >= 1 
+      const pitch = Math.abs(sinp) >= 1
         ? Math.sign(sinp) * 90
         : Math.asin(sinp) * (180 / Math.PI);
-      
       setAngles({ pitch, roll });
+      return;
     }
+
+    // Orientation yoksa/identity ise → ivmeden hesapla
+    const acc = data.linear_acceleration;
+    if (!acc) return;
+
+    const ax = acc.x ?? 0;
+    const ay = acc.y ?? 0;
+    const az = acc.z ?? 0;
+
+    // Tümü sıfırsa veri gelmemiştir, atla
+    if (ax === 0 && ay === 0 && az === 0) return;
+
+    const pitch = Math.atan2(-ax, Math.sqrt(ay * ay + az * az)) * (180 / Math.PI);
+    const roll  = Math.atan2(ay, az) * (180 / Math.PI);
+
+    setAngles({ pitch, roll });
   }, [data]);
 
   const styles = {
@@ -97,14 +122,21 @@ const VehicleIncline = ({ ros, topic = '/imu/data' }) => {
     },
     grid: {
       position: 'absolute',
-      top: 0,
-      left: 0,
-      width: '100%',
-      height: '100%',
+      top: 0, left: 0,
+      width: '100%', height: '100%',
       backgroundImage: `
         repeating-linear-gradient(0deg, transparent, transparent 20px, rgba(0, 255, 65, 0.05) 20px, rgba(0, 255, 65, 0.05) 21px),
         repeating-linear-gradient(90deg, transparent, transparent 20px, rgba(0, 255, 65, 0.05) 20px, rgba(0, 255, 65, 0.05) 21px)
       `,
+      pointerEvents: 'none'
+    },
+    sourceTag: {
+      position: 'absolute',
+      bottom: '6px',
+      right: '8px',
+      fontSize: '9px',
+      color: 'rgba(0,255,65,0.4)',
+      fontFamily: 'monospace',
       pointerEvents: 'none'
     }
   };
@@ -112,7 +144,7 @@ const VehicleIncline = ({ ros, topic = '/imu/data' }) => {
   return (
     <div style={styles.container}>
       <div style={styles.grid} />
-      
+
       <div style={styles.row}>
         <span style={styles.label}>PITCH ANGLE</span>
         <span style={styles.value}>
@@ -140,6 +172,8 @@ const VehicleIncline = ({ ros, topic = '/imu/data' }) => {
           </div>
         </div>
       </div>
+
+      <div style={styles.sourceTag}>{topic} · accel</div>
     </div>
   );
 };

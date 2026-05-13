@@ -12,6 +12,7 @@ import PanelSettings from './components/Modals/PanelSettings';
 import AddPanelModal from './components/Modals/AddPanelModal';
 import { useROS } from './hooks/useROS';
 import './styles/global.css';
+import LidarVisualization from './components/Pages/LidarVisualization';
 
 function App() {
   const [currentPage, setCurrentPage] = useState('dashboard');
@@ -32,8 +33,8 @@ function App() {
   const DEFAULT_PANELS = [
     { id: 1, type: 'camera', title: 'RGB CAMERA', topic: '/camera/rgb/image_raw' },
     { id: 2, type: 'thermal', title: 'THERMAL CAMERA', topic: '/camera/thermal/image_raw' },
-    { id: 3, type: 'lidar', title: 'LIDAR 3D', topic: '/velodyne_points' },
-    { id: 4, type: 'incline', title: 'VEHICLE INCLINE', topic: '/imu/data' },
+    { id: 3, type: 'lidar', title: 'LIDAR 3D', topic: '/livox/lidar' },
+    { id: 4, type: 'incline', title: 'VEHICLE INCLINE', topic: '/livox/imu' },
     { id: 5, type: 'gps', title: 'GPS MAP', topic: '/gps/fix' },
     { id: 6, type: 'system', title: 'SYSTEM STATUS', topic: '' }
   ];
@@ -69,7 +70,26 @@ function App() {
       if (savedPanels) {
         const parsed = JSON.parse(savedPanels);
         if (Array.isArray(parsed) && parsed.length > 0) {
-          setPanels(parsed);
+          // Migrate legacy topic names to Livox equivalents
+          const LEGACY_IMU_TOPICS   = ['/imu/data', '/imu/raw', '/imu/data_raw', '/mavros/imu/data', '/flight/attitude'];
+          const LEGACY_LIDAR_TOPICS = ['/velodyne_points', '/lidar/points', '/ouster/points', '/scan', '/cloud_in'];
+          let migrated = false;
+          const migratedPanels = parsed.map(p => {
+            if ((p.type === 'incline' || p.type === 'horizon') && LEGACY_IMU_TOPICS.includes(p.topic)) {
+              migrated = true;
+              return { ...p, topic: '/livox/imu' };
+            }
+            if (p.type === 'lidar' && LEGACY_LIDAR_TOPICS.includes(p.topic)) {
+              migrated = true;
+              return { ...p, topic: '/livox/lidar' };
+            }
+            return p;
+          });
+          if (migrated) {
+            console.log('🔄 Migrated legacy panel topics to /livox/*');
+            localStorage.setItem('droneUI_panels', JSON.stringify(migratedPanels));
+          }
+          setPanels(migratedPanels);
         } else {
           localStorage.removeItem('droneUI_panels');
           localStorage.removeItem('droneUI_mosaicLayout');
@@ -240,6 +260,12 @@ function App() {
             connected={connected}
           />
         )}
+        {currentPage === 'lidar' && (
+  <LidarVisualization
+    ros={ros}
+    connected={connected}
+  />
+)}
         {currentPage === 'settings' && (
           <Settings 
             ros={ros} 
@@ -247,6 +273,7 @@ function App() {
             error={error}
           />
         )}
+        
       </main>
 
       {settingsPanel && (

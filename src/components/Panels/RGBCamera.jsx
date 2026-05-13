@@ -1,121 +1,60 @@
-import React, { useEffect, useRef, useState } from 'react';
-import { useROSTopic } from '../../hooks/useROS';
+import React, { useState, useRef, useEffect } from 'react';
 
-const RGBCamera = ({ ros, topic = '/usb_cam/image_raw' }) => {
-  const { data, lastUpdate } = useROSTopic(ros, topic, 'sensor_msgs/msg/Image', 100);
-  const canvasRef = useRef(null);
-  const [error, setError] = useState(null);
-  const [stats, setStats] = useState({ width: 0, height: 0, fps: 0, encoding: '' });
-  const fpsCounterRef = useRef({ count: 0, lastTime: Date.now() });
+/**
+ * RGBCamera — web_video_server MJPEG stream kullanır.
+ * Rosbridge üzerinden raw Image almak yerine doğrudan HTTP MJPEG stream ile
+ * çok daha yüksek FPS elde edilir.
+ *
+ * web_video_server'ın çalışıyor olması gerekir:
+ *   ros2 run web_video_server web_video_server
+ *   → http://ROBOT_IP:8080/stream?topic=TOPIC&type=mjpeg
+ */
 
-  useEffect(() => {
-    if (!data) return;
+// Robot IP'yi rosbridge URL'inden otomatik al
+const getRobotIP = () => {
+  const rosUrl = localStorage.getItem('ros_url') || 'ws://localhost:9090';
+  try {
+    // ws://192.168.1.117:9090  →  192.168.1.117
+    const match = rosUrl.match(/ws[s]?:\/\/([^:/]+)/);
+    return match ? match[1] : 'localhost';
+  } catch {
+    return 'localhost';
+  }
+};
 
-    try {
-      // FPS hesapla
-      const now = Date.now();
-      fpsCounterRef.current.count++;
-      if (now - fpsCounterRef.current.lastTime > 1000) {
-        const fps = fpsCounterRef.current.count;
-        setStats(prev => ({ ...prev, fps }));
-        fpsCounterRef.current.count = 0;
-        fpsCounterRef.current.lastTime = now;
-      }
+const WEB_VIDEO_PORT = 8080;
 
-      const { width, height, encoding, data: imageBytes } = data;
-      
-      console.log('🖼️ Processing image:', { 
-        width, 
-        height, 
-        encoding, 
-        bytesType: typeof imageBytes,
-        isArray: Array.isArray(imageBytes),
-        isUint8Array: imageBytes instanceof Uint8Array,
-        bytesLength: imageBytes?.length,
-        firstBytes: imageBytes?.slice ? Array.from(imageBytes.slice(0, 10)) : 'N/A'
-      });
-      
-      setStats({ width, height, fps: stats.fps, encoding });
+const RGBCamera = ({ ros, topic = '/image_raw' }) => {
+  const robotIP = getRobotIP();
+  const streamUrl = `http://${robotIP}:${WEB_VIDEO_PORT}/stream?topic=${topic}&type=mjpeg`;
 
-      const canvas = canvasRef.current;
-      if (!canvas) {
-        console.warn('⚠️ Canvas ref not available');
-        return;
-      }
+  const imgRef = useRef(null);
+  const [status, setStatus] = useState('connecting'); // connecting | ok | error
+  const [fps, setFps] = useState(0);
+  const fpsRef = useRef({ count: 0, lastTime: Date.now() });
 
-      canvas.width = width;
-      canvas.height = height;
-      const ctx = canvas.getContext('2d');
-      
-      // Clear canvas first (debug için)
-      ctx.fillStyle = '#FF00FF'; // Magenta - eğer bu renk görünürse canvas çalışıyor demektir
-      ctx.fillRect(0, 0, 50, 50);
-
-      // Data'yı Uint8Array'e çevir (eğer değilse)
-      let bytes;
-      if (typeof imageBytes === 'string') {
-        // Base64 encoded
-        console.log('📦 Decoding base64 string');
-        const binaryString = atob(imageBytes);
-        bytes = new Uint8Array(binaryString.length);
-        for (let i = 0; i < binaryString.length; i++) {
-          bytes[i] = binaryString.charCodeAt(i);
-        }
-      } else if (imageBytes instanceof Uint8Array) {
-        bytes = imageBytes;
-      } else if (Array.isArray(imageBytes)) {
-        bytes = new Uint8Array(imageBytes);
-      } else {
-        console.error('❌ Unknown data type:', typeof imageBytes);
-        setError('Unknown image data type');
-        return;
-      }
-
-      console.log('✅ Bytes ready:', bytes.length, 'expected:', width * height * 3);
-
-      if (encoding === 'rgb8') {
-        console.log('🎨 Rendering RGB8 image');
-        const imgData = ctx.createImageData(width, height);
-        
-        for (let i = 0; i < width * height; i++) {
-          const srcIdx = i * 3;
-          const dstIdx = i * 4;
-          
-          imgData.data[dstIdx + 0] = bytes[srcIdx + 0]; // R
-          imgData.data[dstIdx + 1] = bytes[srcIdx + 1]; // G
-          imgData.data[dstIdx + 2] = bytes[srcIdx + 2]; // B
-          imgData.data[dstIdx + 3] = 255; // Alpha
-        }
-        
-        ctx.putImageData(imgData, 0, 0);
-        console.log('✅ Image rendered successfully');
-      } else if (encoding === 'bgr8') {
-        console.log('🎨 Rendering BGR8 image');
-        const imgData = ctx.createImageData(width, height);
-        
-        for (let i = 0; i < width * height; i++) {
-          const srcIdx = i * 3;
-          const dstIdx = i * 4;
-          
-          imgData.data[dstIdx + 0] = bytes[srcIdx + 2]; // R
-          imgData.data[dstIdx + 1] = bytes[srcIdx + 1]; // G
-          imgData.data[dstIdx + 2] = bytes[srcIdx + 0]; // B
-          imgData.data[dstIdx + 3] = 255; // Alpha
-        }
-        
-        ctx.putImageData(imgData, 0, 0);
-        console.log('✅ Image rendered successfully');
-      } else {
-        console.warn('⚠️ Unsupported encoding:', encoding);
-        setError(`Unsupported encoding: ${encoding}`);
-      }
-      
-      setError(null);
-    } catch (err) {
-      console.error('❌ Error rendering image:', err);
-      setError(err.message);
+  // FPS sayacı — her image load event'inde tetiklenir
+  const handleLoad = () => {
+    setStatus('ok');
+    fpsRef.current.count++;
+    const now = Date.now();
+    if (now - fpsRef.current.lastTime >= 1000) {
+      setFps(fpsRef.current.count);
+      fpsRef.current.count = 0;
+      fpsRef.current.lastTime = now;
     }
-  }, [data]);
+  };
+
+  const handleError = () => {
+    setStatus('error');
+  };
+
+  // Topic veya bağlantı değişince stream URL'ini yenile
+  useEffect(() => {
+    setStatus('connecting');
+    setFps(0);
+    fpsRef.current = { count: 0, lastTime: Date.now() };
+  }, [topic, robotIP]);
 
   const styles = {
     container: {
@@ -124,117 +63,100 @@ const RGBCamera = ({ ros, topic = '/usb_cam/image_raw' }) => {
       display: 'flex',
       alignItems: 'center',
       justifyContent: 'center',
-      background: '#1a1a1a', // Hafif gri - tamamen siyah değil
+      background: '#000',
       position: 'relative',
       overflow: 'hidden'
     },
-    canvas: {
+    img: {
       maxWidth: '100%',
       maxHeight: '100%',
       objectFit: 'contain',
-      imageRendering: 'auto',
-      background: '#000', // Canvas'ın kendi arka planı
-      display: 'block' // Inline elementten kaçın
+      display: status === 'ok' ? 'block' : 'none'
     },
-    noFeed: {
-      display: 'flex',
-      flexDirection: 'column',
-      alignItems: 'center',
-      gap: '16px',
-      color: '#ff8800',
-      padding: '20px',
-      textAlign: 'center'
-    },
-    icon: {
-      fontSize: '48px'
-    },
-    text: {
-      fontSize: '14px',
-      fontWeight: 600
-    },
-    info: {
+    overlay: {
       position: 'absolute',
-      top: '12px',
-      right: '12px',
+      top: '10px',
+      right: '10px',
       display: 'flex',
       flexDirection: 'column',
-      gap: '6px',
+      gap: '5px',
       alignItems: 'flex-end',
       pointerEvents: 'none',
       zIndex: 10
     },
-    badge: {
+    badge: (color = '#00ff41') => ({
       fontSize: '10px',
-      padding: '4px 8px',
-      background: 'rgba(0, 0, 0, 0.8)',
-      border: '1px solid rgba(0, 255, 65, 0.5)',
+      padding: '3px 8px',
+      background: 'rgba(0,0,0,0.75)',
+      border: `1px solid ${color}60`,
       borderRadius: '4px',
-      color: '#00ff41',
+      color,
       fontFamily: 'monospace',
       backdropFilter: 'blur(4px)',
       whiteSpace: 'nowrap'
-    },
-    error: {
-      color: '#ff4444',
-      fontSize: '12px',
-      padding: '8px 12px',
-      background: 'rgba(255, 68, 68, 0.1)',
-      border: '1px solid rgba(255, 68, 68, 0.3)',
-      borderRadius: '6px',
-      maxWidth: '90%'
-    },
-    debugInfo: {
-      fontSize: '10px',
-      color: '#8b92a0',
-      marginTop: '8px',
-      fontFamily: 'monospace',
-      maxWidth: '300px',
-      wordBreak: 'break-word'
+    }),
+    noFeed: {
+      display: 'flex',
+      flexDirection: 'column',
+      alignItems: 'center',
+      gap: '12px',
+      color: '#ff8800',
+      padding: '20px',
+      textAlign: 'center'
     }
   };
 
   return (
     <div style={styles.container}>
-      {data ? (
-        <>
-          <canvas ref={canvasRef} style={styles.canvas} />
-          
-          <div style={styles.info}>
-            <span style={styles.badge}>
-              {stats.width}x{stats.height}
-            </span>
-            <span style={styles.badge}>
-              {stats.fps} FPS
-            </span>
-            <span style={styles.badge}>
-              {stats.encoding}
-            </span>
-            <span style={styles.badge}>
-              {topic}
-            </span>
-            {lastUpdate && (
-              <span style={styles.badge}>
-                {lastUpdate.toLocaleTimeString()}
-              </span>
-            )}
-          </div>
-          
-          {error && (
-            <div style={{ ...styles.error, position: 'absolute', bottom: '20px' }}>
-              {error}
-            </div>
-          )}
-        </>
-      ) : (
+      {/* MJPEG stream — tarayıcı built-in MJPEG desteğiyle doğrudan oynatır */}
+      <img
+        ref={imgRef}
+        src={streamUrl}
+        alt="RGB Camera"
+        style={styles.img}
+        onLoad={handleLoad}
+        onError={handleError}
+      />
+
+      {/* Bağlanıyor... */}
+      {status === 'connecting' && (
         <div style={styles.noFeed}>
-          <div style={styles.icon}>📷</div>
-          <div style={styles.text}>
-            Waiting for camera feed...
+          <div style={{ fontSize: '40px' }}>📷</div>
+          <div style={{ fontSize: '14px', fontWeight: 600 }}>Kamera bağlanıyor...</div>
+          <div style={{ fontSize: '10px', color: '#666', fontFamily: 'monospace', wordBreak: 'break-all', maxWidth: '90%' }}>
+            {streamUrl}
           </div>
-          <div style={styles.debugInfo}>
-            Topic: {topic}<br/>
+          <div style={{ fontSize: '10px', color: '#8b92a0', fontFamily: 'monospace' }}>
             ROS: {ros ? '✅ Connected' : '❌ Not connected'}
           </div>
+        </div>
+      )}
+
+      {/* Hata */}
+      {status === 'error' && (
+        <div style={styles.noFeed}>
+          <div style={{ fontSize: '40px' }}>⚠️</div>
+          <div style={{ fontSize: '13px', fontWeight: 600, color: '#ff4444' }}>
+            web_video_server bağlantısı kurulamadı
+          </div>
+          <div style={{ fontSize: '10px', color: '#888', fontFamily: 'monospace', wordBreak: 'break-all', maxWidth: '90%' }}>
+            {streamUrl}
+          </div>
+          <div style={{ fontSize: '11px', color: '#ff8800', marginTop: '8px' }}>
+            Terminalden şunu çalıştır:<br />
+            <code style={{ background: '#111', padding: '4px 8px', borderRadius: '4px' }}>
+              ros2 run web_video_server web_video_server
+            </code>
+          </div>
+        </div>
+      )}
+
+      {/* Bilgi overlay */}
+      {status === 'ok' && (
+        <div style={styles.overlay}>
+          <span style={styles.badge('#00ff41')}>{fps} FPS</span>
+          <span style={styles.badge('#00aaff')}>{topic}</span>
+          <span style={styles.badge('#00ff41')}>MJPEG</span>
         </div>
       )}
     </div>
