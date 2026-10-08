@@ -1,70 +1,72 @@
-# Getting Started with Create React App
+<div align="center">
 
-This project was bootstrapped with [Create React App](https://github.com/facebook/create-react-app).
+# 🚁 Drone Ground Station Dashboard
 
-## Available Scripts
+**A modular, real-time ground station UI for autonomous UAVs and robots running ROS.**
+Drag-and-drop sensor panels — RGB & thermal video, 3D LiDAR, attitude, GPS and telemetry — streamed live over rosbridge.
 
-In the project directory, you can run:
+![React](https://img.shields.io/badge/React-20232A?style=for-the-badge&logo=react&logoColor=61DAFB)
+![Three.js](https://img.shields.io/badge/Three.js-000000?style=for-the-badge&logo=threedotjs&logoColor=white)
+![ROS](https://img.shields.io/badge/ROS-22314E?style=for-the-badge&logo=ros&logoColor=white)
+![Recharts](https://img.shields.io/badge/Recharts-FF6384?style=for-the-badge)
 
-### `npm start`
+</div>
 
-Runs the app in the development mode.\
-Open [http://localhost:3000](http://localhost:3000) to view it in your browser.
+---
 
-The page will reload when you make changes.\
-You may also see any lint errors in the console.
+## ✨ Overview
 
-### `npm test`
+The dashboard connects to a vehicle's ROS graph via **rosbridge** and lets the operator build their own layout from sensor panels. Every panel is bound to a ROS topic that can be changed at runtime, so the same UI works across different vehicles and simulations.
 
-Launches the test runner in the interactive watch mode.\
-See the section about [running tests](https://facebook.github.io/create-react-app/docs/running-tests) for more information.
+## 🧩 Panels
 
-### `npm run build`
+| Panel | Default topic | Description |
+|---|---|---|
+| RGB Camera | `/camera/rgb/image_raw` | Live video feed |
+| Thermal Camera | `/camera/thermal/image_raw` | Thermal imaging feed |
+| LiDAR 3D | `/livox/lidar` | Interactive point-cloud viewer (Three.js) |
+| Vehicle Incline | `/livox/imu` | Roll / pitch attitude indicator |
+| Artificial Horizon | — | Flight-style attitude display |
+| GPS Map | `/gps/fix` | Live position on map |
+| System Status | — | Connection, battery, speed |
 
-Builds the app for production to the `build` folder.\
-It correctly bundles React in production mode and optimizes the build for the best performance.
+## 🖥️ Pages
 
-The build is minified and the filenames include the hashes.\
-Your app is ready to be deployed!
+- **Dashboard** — tiling (mosaic) or responsive-grid layout, add / remove / configure panels
+- **Teleop** — compact manual control
+- **LiDAR Visualization** — full-screen point cloud
+- **SLAM Configuration** — tune mapping parameters
+- **Telemetry Charts** — time-series plots
+- **Logs** & **Settings** — ROS URL, auto-reconnect, theme manager
+- **Emergency Stop** — always visible in the status bar
 
-See the section about [deployment](https://facebook.github.io/create-react-app/docs/deployment) for more information.
+## 🏗️ How it works
 
-### `npm run eject`
+```mermaid
+flowchart LR
+    P[Panels] -->|subscribe| H[useROS hook]
+    H <-->|WebSocket| RB[rosbridge]
+    RB <--> V[Vehicle / Gazebo sim]
+    H -.->|auto-reconnect| H
+```
 
-**Note: this is a one-way operation. Once you `eject`, you can't go back!**
+`useROS` manages a single connection with automatic reconnection; the ROS URL is persisted in local storage.
 
-If you aren't satisfied with the build tool and configuration choices, you can `eject` at any time. This command will remove the single build dependency from your project.
+## 🚀 Getting Started
 
-Instead, it will copy all the configuration files and the transitive dependencies (webpack, Babel, ESLint, etc) right into your project so you have full control over them. All of the commands except `eject` will still work, but they will point to the copied scripts so you can tweak them. At this point you're on your own.
+```bash
+npm install
+npm start          # http://localhost:3000
+```
 
-You don't have to ever use `eject`. The curated feature set is suitable for small and middle deployments, and you shouldn't feel obligated to use this feature. However we understand that this tool wouldn't be useful if you couldn't customize it when you are ready for it.
+Then set the rosbridge URL (e.g. `ws://<robot-ip>:9090`) under **Settings**.
 
-## Learn More
+## 🛠️ Tech Stack
 
-You can learn more in the [Create React App documentation](https://facebook.github.io/create-react-app/docs/getting-started).
+React 18 · roslib · Three.js · react-mosaic · react-grid-layout · Recharts · lucide-react
 
-To learn React, check out the [React documentation](https://reactjs.org/).
+---
 
-### Code Splitting
-
-This section has moved here: [https://facebook.github.io/create-react-app/docs/code-splitting](https://facebook.github.io/create-react-app/docs/code-splitting)
-
-### Analyzing the Bundle Size
-
-This section has moved here: [https://facebook.github.io/create-react-app/docs/analyzing-the-bundle-size](https://facebook.github.io/create-react-app/docs/analyzing-the-bundle-size)
-
-### Making a Progressive Web App
-
-This section has moved here: [https://facebook.github.io/create-react-app/docs/making-a-progressive-web-app](https://facebook.github.io/create-react-app/docs/making-a-progressive-web-app)
-
-### Advanced Configuration
-
-This section has moved here: [https://facebook.github.io/create-react-app/docs/advanced-configuration](https://facebook.github.io/create-react-app/docs/advanced-configuration)
-
-### Deployment
-
-This section has moved here: [https://facebook.github.io/create-react-app/docs/deployment](https://facebook.github.io/create-react-app/docs/deployment)
-
-### `npm run build` fails to minify
-
-This section has moved here: [https://facebook.github.io/create-react-app/docs/troubleshooting#npm-run-build-fails-to-minify](https://facebook.github.io/create-react-app/docs/troubleshooting#npm-run-build-fails-to-minify)
+<div align="center">
+Built by <a href="https://github.com/Bariscompeng">Barış Coşkun</a>
+</div>
